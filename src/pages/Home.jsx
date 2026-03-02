@@ -22,7 +22,17 @@ export default function Home({ onOpenDay, doneDays }) {
         WebkitTextFillColor: 'transparent',
         margin: '0 auto', // Assure qu'il n'y a pas de décalage de marge
       }}>FITNESS APP BY BRETON</h1>
-      
+      {/* Hommage à Gundill */}
+      <p style={{ 
+        color: '#a78bfa', 
+        fontSize: 11, 
+        marginTop: 8, 
+        opacity: 0.8, 
+        fontStyle: 'italic',
+        letterSpacing: 0.5 
+      }}>
+        Inspiré par le travail du grand et unique Michaël D. Gundill 🙏
+      </p>
       <p style={{ 
         color: '#6b6b8a', 
         fontSize: 14, 

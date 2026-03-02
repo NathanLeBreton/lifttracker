@@ -7,7 +7,7 @@ export default function Home({ onOpenDay, doneDays }) {
  return (
   <div style={{ flex: 1, paddingBottom: 100, overflowY: 'auto' }}>
     <div style={{
-      padding: '48px 24px 32px',
+      padding: '48px 24px 10px',
       background: 'linear-gradient(160deg, #12121e 0%, #1a0a2e 100%)',
       borderBottom: '1px solid #1e1e30',
       textAlign: 'center', // <-- Centre tout le contenu ici

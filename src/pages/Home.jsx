@@ -36,7 +36,7 @@ export default function Home({ onOpenDay, doneDays }) {
       <p style={{ 
         color: '#6b6b8a', 
         fontSize: 14, 
-        marginTop: 6, 
+        marginTop: 16, 
         fontWeight: 300 
       }}>{cap(today)}</p>
     </div>

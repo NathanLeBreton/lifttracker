@@ -38,6 +38,7 @@ export default function Home({ onOpenDay, doneDays }) {
     </div>
   </div>
 )
+}
 
 function DayCard({ day, done, onClick }) {
   return (

@@ -15,7 +15,7 @@ export default function Home({ onOpenDay, doneDays }) {
           fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, letterSpacing: 2, lineHeight: 1,
           background: 'linear-gradient(135deg, #fff 30%, #a78bfa)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>MUSCU<br />BRETON</h1>
+        }}>FITNESS APP BY BRETON</h1>
         <p style={{ color: '#6b6b8a', fontSize: 14, marginTop: 6, fontWeight: 300 }}>{cap(today)}</p>
       </div>
       <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>

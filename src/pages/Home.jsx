@@ -18,7 +18,7 @@ export default function Home({ onOpenDay, doneDays }) {
         }}>FITNESS APP BY BRETON</h1>
         <p style={{ color: '#6b6b8a', fontSize: 14, marginTop: 6, fontWeight: 300 }}>{cap(today)}</p>
       </div>
-      <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '24px 16px', display: 'center', flexDirection: 'column', gap: 10 }}>
         {PROGRAMME.map(day => (
           <DayCard key={day.id} day={day} done={!!doneDays[day.id]} onClick={() => onOpenDay(day)} />
         ))}

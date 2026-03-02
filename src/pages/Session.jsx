@@ -49,6 +49,7 @@ export default function Session({ day, onBack, onValidate }) {
       alert("Aucune perf saisie !")
       return
     }
+    if (!window.confirm(`Valider la séance ? (${filled.length} séries enregistrées)`)) return
     onValidate(day.id, filled)
   }
 

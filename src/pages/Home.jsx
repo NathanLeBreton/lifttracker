@@ -4,28 +4,40 @@ export default function Home({ onOpenDay, doneDays }) {
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
-  return (
-    <div style={{ flex: 1, paddingBottom: 100, overflowY: 'auto' }}>
-      <div style={{
-        padding: '48px 24px 32px',
-        background: 'linear-gradient(160deg, #12121e 0%, #1a0a2e 100%)',
-        borderBottom: '1px solid #1e1e30',
-      }}>
-        <h1 style={{
-          fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, letterSpacing: 2, lineHeight: 1,
-          background: 'linear-gradient(135deg, #fff 30%, #a78bfa)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>FITNESS APP BY BRETON</h1>
-        <p style={{ color: '#6b6b8a', fontSize: 14, marginTop: 6, fontWeight: 300 }}>{cap(today)}</p>
-      </div>
-      <div style={{ padding: '24px 16px', display: 'center', flexDirection: 'column', gap: 10 }}>
-        {PROGRAMME.map(day => (
-          <DayCard key={day.id} day={day} done={!!doneDays[day.id]} onClick={() => onOpenDay(day)} />
-        ))}
-      </div>
+ return (
+  <div style={{ flex: 1, paddingBottom: 100, overflowY: 'auto' }}>
+    <div style={{
+      padding: '48px 24px 32px',
+      background: 'linear-gradient(160deg, #12121e 0%, #1a0a2e 100%)',
+      borderBottom: '1px solid #1e1e30',
+      textAlign: 'center', // <-- Centre tout le contenu ici
+    }}>
+      <h1 style={{
+        fontFamily: "'Bebas Neue', sans-serif", 
+        fontSize: 40, 
+        letterSpacing: 2, 
+        lineHeight: 1,
+        background: 'linear-gradient(135deg, #fff 30%, #a78bfa)',
+        WebkitBackgroundClip: 'text', 
+        WebkitTextFillColor: 'transparent',
+        margin: '0 auto', // Assure qu'il n'y a pas de décalage de marge
+      }}>FITNESS APP BY BRETON</h1>
+      
+      <p style={{ 
+        color: '#6b6b8a', 
+        fontSize: 14, 
+        marginTop: 6, 
+        fontWeight: 300 
+      }}>{cap(today)}</p>
     </div>
-  )
-}
+
+    <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {PROGRAMME.map(day => (
+        <DayCard key={day.id} day={day} done={!!doneDays[day.id]} onClick={() => onOpenDay(day)} />
+      ))}
+    </div>
+  </div>
+)
 
 function DayCard({ day, done, onClick }) {
   return (

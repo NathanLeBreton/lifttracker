@@ -200,7 +200,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, onInput, onTimerOpen, keyFn }) {
               placeholder="kg"
               value={inp.poids || ''}
               onChange={e => onInput(k, 'poids', e.target.value)}
-              onBlur={() => inp.poids && onTimerOpen()}
               style={{
                 background: inp.poids ? '#200f1a' : '#1a1a2e',
                 border: `1.5px solid ${inp.poids ? '#ef444488' : '#22223a'}`,
@@ -216,6 +215,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, onInput, onTimerOpen, keyFn }) {
               placeholder="reps"
               value={inp.reps || ''}
               onChange={e => onInput(k, 'reps', e.target.value)}
+              onBlur={() => inp.reps && onTimerOpen()}
               style={{
                 background: inp.reps ? '#200f1a' : '#1a1a2e',
                 border: `1.5px solid ${inp.reps ? '#ef444488' : '#22223a'}`,

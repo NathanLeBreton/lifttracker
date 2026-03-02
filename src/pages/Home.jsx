@@ -12,7 +12,7 @@ export default function Home({ onOpenDay, doneDays }) {
         borderBottom: '1px solid #1e1e30',
       }}>
         <h1 style={{
-          fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, letterSpacing: 2, lineHeight: 1,
+          fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, letterSpacing: 2, lineHeight: 1,
           background: 'linear-gradient(135deg, #fff 30%, #a78bfa)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>FITNESS APP BY BRETON</h1>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAllHistory, deleteSession } from '../db/db'
+import { getAllHistory, deleteSession, db } from '../db/db'
 import { PROGRAMME } from '../data/programme'
 
 const DAY_LABELS = Object.fromEntries(PROGRAMME.map(d => [d.id, `${d.label} – ${d.subtitle}`]))
@@ -8,6 +8,8 @@ export default function History({ refreshKey }) {
   const [data, setData] = useState([])
   const [open, setOpen] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [resetInput, setResetInput] = useState('')
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   useEffect(() => {
     getAllHistory().then(h => { setData(h); setLoading(false) })
@@ -18,6 +20,25 @@ export default function History({ refreshKey }) {
     if (!confirm('Supprimer cette séance ?')) return
     await deleteSession(sessionId)
     setData(prev => prev.filter(s => s.id !== sessionId))
+  }
+
+  const handleResetClick = () => {
+    if (!confirm('⚠️ Tu es sur le point de supprimer TOUTES tes données.\n\nCette action est irréversible. Continuer ?')) return
+    setShowResetConfirm(true)
+    setResetInput('')
+  }
+
+  const handleResetConfirm = async () => {
+    if (resetInput !== 'RESET') {
+      alert('Tu dois taper exactement "RESET" pour confirmer.')
+      return
+    }
+    await db.sets.clear()
+    await db.sessions.clear()
+    setData([])
+    setShowResetConfirm(false)
+    setResetInput('')
+    alert('✅ Toutes les données ont été supprimées.')
   }
 
   const formatDate = (iso) => {
@@ -49,7 +70,6 @@ export default function History({ refreshKey }) {
             background: '#12121e', border: '1px solid #1a1a2e',
             borderRadius: 14, overflow: 'hidden', marginBottom: 10,
           }}>
-            {/* Session header */}
             <div
               onClick={() => setOpen(open === i ? null : i)}
               style={{
@@ -74,8 +94,6 @@ export default function History({ refreshKey }) {
                 <div style={{ color: '#3a3a5a', fontSize: 14 }}>{open === i ? '▲' : '▼'}</div>
               </div>
             </div>
-
-            {/* Sets detail */}
             {open === i && (
               <div>
                 <div style={{
@@ -103,6 +121,71 @@ export default function History({ refreshKey }) {
             )}
           </div>
         ))}
+
+        {/* Zone RESET — tout en bas, discrète */}
+        <div style={{
+          marginTop: 40, padding: '20px 16px',
+          border: '1px solid #2a0f0f', borderRadius: 14,
+          background: '#120808',
+        }}>
+          <div style={{ fontSize: 11, color: '#6b2020', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+            ⚠️ Zone dangereuse
+          </div>
+          <div style={{ fontSize: 12, color: '#4a2020', marginBottom: 12, lineHeight: 1.6 }}>
+            Supprime toutes les séances et données de progression. Action irréversible.
+          </div>
+
+          {!showResetConfirm ? (
+            <button
+              onClick={handleResetClick}
+              style={{
+                background: 'transparent', border: '1px solid #6b2020',
+                borderRadius: 8, padding: '8px 16px',
+                color: '#6b2020', fontSize: 12, fontWeight: 600,
+              }}
+            >
+              Réinitialiser toutes les données
+            </button>
+          ) : (
+            <div>
+              <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8, fontWeight: 600 }}>
+                Tape "RESET" pour confirmer :
+              </div>
+              <input
+                type="text"
+                value={resetInput}
+                onChange={e => setResetInput(e.target.value)}
+                placeholder="RESET"
+                style={{
+                  background: '#1a0808', border: '1.5px solid #6b2020',
+                  borderRadius: 8, padding: '8px 12px', color: '#ef4444',
+                  fontSize: 14, fontWeight: 600, width: '100%',
+                  outline: 'none', marginBottom: 10,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  style={{
+                    flex: 1, background: '#1a1a2e', border: 'none',
+                    borderRadius: 8, padding: '8px', color: '#6b6b8a', fontSize: 12,
+                  }}
+                >Annuler</button>
+                <button
+                  onClick={handleResetConfirm}
+                  style={{
+                    flex: 1, background: resetInput === 'RESET' ? '#7f1d1d' : '#2a0f0f',
+                    border: 'none', borderRadius: 8, padding: '8px',
+                    color: resetInput === 'RESET' ? '#fca5a5' : '#4a2020',
+                    fontSize: 12, fontWeight: 600,
+                    transition: 'all 0.2s',
+                  }}
+                >Supprimer tout</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

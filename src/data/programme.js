@@ -96,12 +96,12 @@ export const PROGRAMME = [
     muscles: [
       { name: 'BICEPS', color: '#10b981', exercises: [
         { name: 'Curl incliné', sets: 3, reps: '8–12',  rir: '0–1', unilateral: true },
-        { name: 'Curl pupitre', sets: 3, reps: '10–15', rir: '0–1' },
+        { name: 'Curl pupitre', sets: 3, reps: '10–15', rir: '0–1', unilateral: true },
         { name: 'Curl marteau', sets: 3, reps: '10–15', rir: '0–1' },
       ]},
       { name: 'TRICEPS', color: '#f97316', exercises: [
         { name: 'Pushdown poulie incliné', sets: 3, reps: '10–15', rir: '0–1' },
-        { name: 'Pushdown unilatéral',     sets: 3, reps: '10–15', rir: '0–1' },
+        { name: 'Pushdown unilatéral', sets: 3, reps: '10–15', rir: '0–1', unilateral: true },
         { name: 'Overhead triceps poulie', sets: 3, reps: '8–12',  rir: '0–1' },
       ]},
     ],

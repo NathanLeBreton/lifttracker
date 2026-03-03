@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getLastSessionPerfs } from '../db/db'
 import RestTimer from '../components/RestTimer'
+import { FICHES } from '../data/exerciceFiches'
 
 const MUSCLE_COLORS = {
   'PECS': '#ef4444', 'DOS (rappel)': '#3b82f6', 'DOS': '#3b82f6',
@@ -17,6 +18,7 @@ export default function Session({ day, onBack, onValidate }) {
   const [lastBonusSets, setLastBonusSets] = useState({})
   const [showTimer, setShowTimer] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [ficheOpen, setFicheOpen] = useState(null) // nom de l'exo
 
   useEffect(() => {
     getLastSessionPerfs(day.id).then(({ perfs, notes: n, bonusSets }) => {
@@ -149,6 +151,7 @@ export default function Session({ day, onBack, onValidate }) {
                 onAddSet={() => addExtraSet(ex.name)}
                 onRemoveSet={() => removeExtraSet(ex.name)}
                 keyFn={key}
+                onFiche={() => setFicheOpen(ex.name)}
               />
             ))}
           </div>
@@ -157,6 +160,82 @@ export default function Session({ day, onBack, onValidate }) {
 
       {showTimer && <RestTimer onClose={() => setShowTimer(false)} />}
     </div>
+    {ficheOpen && (
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'flex-end', zIndex: 200,
+        backdropFilter: 'blur(4px)',
+      }} onClick={() => setFicheOpen(null)}>
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            width: '100%', maxWidth: 430, margin: '0 auto',
+            background: '#12121e', borderRadius: '20px 20px 0 0',
+            padding: '24px 20px 40px', maxHeight: '80vh', overflowY: 'auto',
+          }}
+        >
+          {(() => {
+            const fiche = FICHES[ficheOpen]
+            return (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: '#fff', letterSpacing: 1, flex: 1, paddingRight: 12 }}>
+                    {ficheOpen}
+                  </div>
+                  <button onClick={() => setFicheOpen(null)} style={{
+                    background: '#1a1a2e', border: 'none', borderRadius: 8,
+                    width: 32, height: 32, color: '#6b6b8a', fontSize: 16,
+                  }}>✕</button>
+                </div>
+    
+                {!fiche ? (
+                  <div style={{ color: '#4a4a6a', fontSize: 13, fontStyle: 'italic' }}>
+                    Pas encore de fiche pour cet exercice.
+                  </div>
+                ) : (
+                  <>
+                    {/* Muscles */}
+                    <div style={{ marginBottom: 16 }}>
+                      <SectionTitle>🎯 Muscles ciblés</SectionTitle>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {fiche.muscles.map(m => (
+                          <span key={m} style={{
+                            background: '#1e1e35', borderRadius: 6, padding: '4px 10px',
+                            fontSize: 12, color: '#a78bfa',
+                          }}>{m}</span>
+                        ))}
+                      </div>
+                    </div>
+    
+                    {/* Conseils */}
+                    <div style={{ marginBottom: 16 }}>
+                      <SectionTitle>✅ Conseils d'exécution</SectionTitle>
+                      {fiche.conseils.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                          <span style={{ color: '#16a34a', fontSize: 12, marginTop: 1 }}>•</span>
+                          <span style={{ fontSize: 13, color: '#c0c0d8', lineHeight: 1.6 }}>{c}</span>
+                        </div>
+                      ))}
+                    </div>
+    
+                    {/* Erreurs */}
+                    <div>
+                      <SectionTitle>⚠️ Erreurs communes</SectionTitle>
+                      {fiche.erreurs.map((e, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                          <span style={{ color: '#ef4444', fontSize: 12, marginTop: 1 }}>•</span>
+                          <span style={{ fontSize: 13, color: '#c0c0d8', lineHeight: 1.6 }}>{e}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )
+          })()}
+        </div>
+      </div>
+    )}  
   )
 }
 
@@ -165,6 +244,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
   const bonusSets = Array.from({ length: extraSetsCount }, (_, i) => ex.sets + i + 1)
   const allSets   = [...baseSets, ...bonusSets]
   const lastBonusArr = Array.from({ length: lastBonusCount }, (_, i) => ex.sets + i + 1)
+  
 
   return (
     <div style={{
@@ -379,6 +459,14 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           }}
         />
       </div>
+    </div>
+  )
+}
+
+function SectionTitle({ children }) {
+  return (
+    <div style={{ fontSize: 10, fontWeight: 700, color: '#6b6b8a', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+      {children}
     </div>
   )
 }

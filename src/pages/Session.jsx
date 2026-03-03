@@ -324,7 +324,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         <textarea
           value={note}
           onChange={e => onNote(ex.name, e.target.value)}
-          placeholder="Note sur cet exercice... (machine prise, mauvaise série, ...)"
+          placeholder="Note sur cet exercice..."
           rows={2}
           style={{
             background: '#0f0f1a', border: '1px solid #1e1e35',

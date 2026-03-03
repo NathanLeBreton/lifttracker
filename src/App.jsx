@@ -21,9 +21,9 @@ export default function App() {
     setView('session')
   }
 
-  const handleValidate = async (dayId, rows) => {
+  const handleValidate = async (dayId, rows, notes) => {
     try {
-      await saveSession(dayId, rows)
+      await saveSession(dayId, rows, notes)
       setDoneDays(prev => ({ ...prev, [dayId]: true }))
       setHistoryKey(k => k + 1)
       showToast(`✅ ${rows.length} séries archivées !`)

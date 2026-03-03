@@ -9,9 +9,9 @@ const MUSCLE_COLORS = {
 }
 
 export default function Session({ day, onBack, onValidate }) {
-  const [inputs, setInputs] = useState({})       // "exo|S1" -> {poids, reps}
-  const [notes, setNotes] = useState({})         // exoName -> string
-  const [extraSets, setExtraSets] = useState({}) // exoName -> nb séries bonus
+  const [inputs, setInputs] = useState({})
+  const [notes, setNotes] = useState({})
+  const [extraSets, setExtraSets] = useState({})
   const [lastPerfs, setLastPerfs] = useState({})
   const [lastNotes, setLastNotes] = useState({})
   const [lastBonusSets, setLastBonusSets] = useState({})
@@ -27,7 +27,7 @@ export default function Session({ day, onBack, onValidate }) {
     })
   }, [day.id])
 
-  const key = (exo, s) => `${exo}|S${s}`
+  const key = (exo, s, side) => side ? `${exo}|S${s}|${side}` : `${exo}|S${s}`
 
   const handleInput = (k, field, val) => {
     setInputs(prev => ({ ...prev, [k]: { ...prev[k], [field]: val } }))
@@ -45,7 +45,6 @@ export default function Session({ day, onBack, onValidate }) {
     setExtraSets(prev => {
       const current = prev[exoName] || 0
       if (current <= 0) return prev
-      // Efface les inputs de la dernière série bonus
       const totalSets = getExoTotalSets(exoName, prev)
       const lastKey = key(exoName, totalSets)
       setInputs(inp => { const next = { ...inp }; delete next[lastKey]; return next })
@@ -65,16 +64,19 @@ export default function Session({ day, onBack, onValidate }) {
       m.exercises.forEach(ex => {
         const total = getExoTotalSets(ex.name)
         for (let s = 1; s <= total; s++) {
-          const k = key(ex.name, s)
-          const inp = inputs[k] || {}
           const isBonus = s > ex.sets
-          rows.push({
-            exo: ex.name,
-            serie: `S${s}`,
-            poids: inp.poids || '',
-            reps: inp.reps || '',
-            bonus: isBonus,
-          })
+          if (ex.unilateral) {
+            const kG = key(ex.name, s, 'G')
+            const kD = key(ex.name, s, 'D')
+            const inpG = inputs[kG] || {}
+            const inpD = inputs[kD] || {}
+            rows.push({ exo: ex.name, serie: `S${s}G`, poids: inpG.poids || '', reps: inpG.reps || '', bonus: isBonus })
+            rows.push({ exo: ex.name, serie: `S${s}D`, poids: inpD.poids || '', reps: inpD.reps || '', bonus: isBonus })
+          } else {
+            const k2 = key(ex.name, s)
+            const inp = inputs[k2] || {}
+            rows.push({ exo: ex.name, serie: `S${s}`, poids: inp.poids || '', reps: inp.reps || '', bonus: isBonus })
+          }
         }
       })
     })
@@ -92,7 +94,6 @@ export default function Session({ day, onBack, onValidate }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
       <div style={{
         padding: '16px 20px 14px', background: '#0d0d14',
         borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 14,
@@ -109,25 +110,18 @@ export default function Session({ day, onBack, onValidate }) {
           </div>
           <div style={{ fontSize: 11, color: '#6b6b8a', marginTop: 2 }}>{day.subtitle}</div>
         </div>
-        <button
-          onClick={() => setShowTimer(true)}
-          style={{
-            width: 36, height: 36, borderRadius: 10, background: '#1a1a2e',
-            border: 'none', color: '#a78bfa', fontSize: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >⏱</button>
-        <button
-          onClick={handleValidate}
-          style={{
-            background: 'linear-gradient(135deg, #16a34a, #15803d)', border: 'none',
-            borderRadius: 10, padding: '8px 14px', color: '#fff',
-            fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >✓ Valider</button>
+        <button onClick={() => setShowTimer(true)} style={{
+          width: 36, height: 36, borderRadius: 10, background: '#1a1a2e',
+          border: 'none', color: '#a78bfa', fontSize: 18,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>⏱</button>
+        <button onClick={handleValidate} style={{
+          background: 'linear-gradient(135deg, #16a34a, #15803d)', border: 'none',
+          borderRadius: 10, padding: '8px 14px', color: '#fff',
+          fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
+        }}>✓ Valider</button>
       </div>
 
-      {/* Body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 120px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         {day.muscles.map(muscle => (
           <div key={muscle.name}>
@@ -154,7 +148,6 @@ export default function Session({ day, onBack, onValidate }) {
                 onNote={handleNote}
                 onAddSet={() => addExtraSet(ex.name)}
                 onRemoveSet={() => removeExtraSet(ex.name)}
-                onTimerOpen={() => setShowTimer(true)}
                 keyFn={key}
               />
             ))}
@@ -167,12 +160,10 @@ export default function Session({ day, onBack, onValidate }) {
   )
 }
 
-function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, extraSetsCount, onInput, onNote, onAddSet, onRemoveSet, onTimerOpen, keyFn }) {
-  const baseSets = Array.from({ length: ex.sets }, (_, i) => i + 1)
+function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, extraSetsCount, onInput, onNote, onAddSet, onRemoveSet, keyFn }) {
+  const baseSets  = Array.from({ length: ex.sets }, (_, i) => i + 1)
   const bonusSets = Array.from({ length: extraSetsCount }, (_, i) => ex.sets + i + 1)
-  const allSets = [...baseSets, ...bonusSets]
-
-  // Séries bonus S-1 (depuis la semaine dernière)
+  const allSets   = [...baseSets, ...bonusSets]
   const lastBonusArr = Array.from({ length: lastBonusCount }, (_, i) => ex.sets + i + 1)
 
   return (
@@ -187,7 +178,14 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         borderBottom: '1px solid #1a1a2e',
       }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e8f0', lineHeight: 1.2 }}>{ex.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e8f0', lineHeight: 1.2 }}>{ex.name}</div>
+            {ex.unilateral && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#1a2a1a', color: '#10b981', letterSpacing: 0.5 }}>
+                UNILAT
+              </span>
+            )}
+          </div>
           <div style={{ fontSize: 11, color: '#4a4a6a', marginTop: 3 }}>{ex.sets} séries</div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -215,21 +213,80 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
       )}
 
       {/* Table header */}
-      <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
-        {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
-          <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>
-            {h}
-          </span>
-        ))}
-      </div>
+      {ex.unilateral ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
+          {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
+            <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
+          {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
+            <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
+          ))}
+        </div>
+      )}
 
-      {/* Séries normales */}
+      {/* Séries */}
       {allSets.map(s => {
+        const isBonus = s > ex.sets
+
+        if (ex.unilateral) {
+          const sides = [
+            { side: 'G', label: `S${s}G`, color: '#0ea5e9' },
+            { side: 'D', label: `S${s}D`, color: '#f97316' },
+          ]
+          return sides.map(({ side, label, color }) => {
+            const k = keyFn(ex.name, s, side)
+            const inp = inputs[k] || {}
+            const prev = lastPerfs[`${ex.name}|${label}`]
+            return (
+              <div key={label} style={{
+                display: 'grid', gridTemplateColumns: '36px 1fr 1fr 1fr 1fr',
+                padding: '6px 14px', gap: 6, alignItems: 'center',
+                borderTop: '1px solid #14141f',
+                background: isBonus ? '#0d0d18' : 'transparent',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color }}>
+                  {isBonus ? `＋${side}` : label}
+                </span>
+                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
+                  {prev?.poids || '—'}
+                </span>
+                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
+                  {prev?.reps || '—'}
+                </span>
+                <input
+                  type="number" placeholder="kg" value={inp.poids || ''}
+                  onChange={e => onInput(k, 'poids', e.target.value)}
+                  style={{
+                    background: inp.poids ? '#200f1a' : '#1a1a2e',
+                    border: `1.5px solid ${inp.poids ? '#ef444488' : '#22223a'}`,
+                    borderRadius: 8, padding: '7px 6px',
+                    color: inp.poids ? '#fca5a5' : '#e8e8f0',
+                    fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
+                  }}
+                />
+                <input
+                  type="number" placeholder="reps" value={inp.reps || ''}
+                  onChange={e => onInput(k, 'reps', e.target.value)}
+                  style={{
+                    background: inp.reps ? '#200f1a' : '#1a1a2e',
+                    border: `1.5px solid ${inp.reps ? '#ef444488' : '#22223a'}`,
+                    borderRadius: 8, padding: '7px 6px',
+                    color: inp.reps ? '#fca5a5' : '#e8e8f0',
+                    fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
+                  }}
+                />
+              </div>
+            )
+          })
+        }
+
+        // Exercice normal
         const k = keyFn(ex.name, s)
         const inp = inputs[k] || {}
         const prev = lastPerfs[`${ex.name}|S${s}`]
-        const isBonus = s > ex.sets
-
         return (
           <div key={s} style={{
             display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr',
@@ -237,10 +294,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             borderTop: '1px solid #14141f',
             background: isBonus ? '#0d0d18' : 'transparent',
           }}>
-            <span style={{
-              fontSize: 11, fontWeight: 600,
-              color: isBonus ? '#533483' : '#4a4a6a',
-            }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: isBonus ? '#533483' : '#4a4a6a' }}>
               {isBonus ? '＋' : `S${s}`}
             </span>
             <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
@@ -263,7 +317,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             <input
               type="number" placeholder="reps" value={inp.reps || ''}
               onChange={e => onInput(k, 'reps', e.target.value)}
-              onBlur={() => inp.reps && onTimerOpen()}
               style={{
                 background: inp.reps ? '#200f1a' : '#1a1a2e',
                 border: `1.5px solid ${inp.reps ? '#ef444488' : isBonus ? '#2d1f4a' : '#22223a'}`,
@@ -276,7 +329,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         )
       })}
 
-      {/* Séries bonus S-1 (semaine dernière, read-only) */}
+      {/* Séries bonus S-1 read-only */}
       {lastBonusArr.map(s => {
         const prev = lastPerfs[`${ex.name}|S${s}`]
         if (!prev || (!prev.poids && !prev.reps)) return null
@@ -290,37 +343,28 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             <span style={{ textAlign: 'center', fontSize: 12, color: '#533483' }}>{prev.poids || '—'}</span>
             <span style={{ textAlign: 'center', fontSize: 12, color: '#533483' }}>{prev.reps || '—'}</span>
             <span style={{ textAlign: 'center', fontSize: 11, color: '#2a2a40', gridColumn: 'span 2', fontStyle: 'italic' }}>
-              série bonus semaine dernière
+              bonus S-1
             </span>
           </div>
         )
       })}
 
-      {/* Boutons + série / - série + note */}
+      {/* Footer : + série / note */}
       <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a2e', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* Boutons séries */}
         <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={onAddSet}
-            style={{
-              background: '#1a1a2e', border: '1px dashed #2d1f4a',
-              borderRadius: 8, padding: '6px 12px', color: '#a78bfa',
-              fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >＋ série</button>
+          <button onClick={onAddSet} style={{
+            background: '#1a1a2e', border: '1px dashed #2d1f4a',
+            borderRadius: 8, padding: '6px 12px', color: '#a78bfa',
+            fontSize: 11, fontWeight: 600,
+          }}>＋ série</button>
           {extraSetsCount > 0 && (
-            <button
-              onClick={onRemoveSet}
-              style={{
-                background: '#1a1a2e', border: '1px dashed #3a1a1a',
-                borderRadius: 8, padding: '6px 12px', color: '#6b3a3a',
-                fontSize: 11, fontWeight: 600,
-              }}
-            >－ série</button>
+            <button onClick={onRemoveSet} style={{
+              background: '#1a1a2e', border: '1px dashed #3a1a1a',
+              borderRadius: 8, padding: '6px 12px', color: '#6b3a3a',
+              fontSize: 11, fontWeight: 600,
+            }}>－ série</button>
           )}
         </div>
-
-        {/* Zone de note */}
         <textarea
           value={note}
           onChange={e => onNote(ex.name, e.target.value)}

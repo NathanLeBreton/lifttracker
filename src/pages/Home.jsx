@@ -21,7 +21,7 @@ export default function Home({ onOpenDay, doneDays }) {
         WebkitBackgroundClip: 'text', 
         WebkitTextFillColor: 'transparent',
         margin: '0 auto', // Assure qu'il n'y a pas de décalage de marge
-      }}>FITNESS APP BY BRETON</h1>
+      }}>6-Days Breton's Split</h1>
       {/* Hommage à Gundill */}
       <p style={{ 
         color: '#a78bfa', 

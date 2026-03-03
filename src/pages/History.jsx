@@ -122,30 +122,6 @@ export default function History({ refreshKey }) {
           </div>
         ))}
 
-        {/* MIGRATION TEMPORAIRE — à supprimer après utilisation */}
-        <div style={{ marginBottom: 16, padding: '16px', background: '#0a1a0a', border: '1px solid #1a3a1a', borderRadius: 12 }}>
-          <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, marginBottom: 8 }}>🔧 Migration one-shot</div>
-          <button
-            onClick={async () => {
-              const all = await db.sets.toArray()
-              let count = 0
-              for (const record of all) {
-                if (record.exo === 'Curl poulie basse') {
-                  await db.sets.update(record.id, { exo: 'Bayesian curl' })
-                  count++
-                }
-              }
-              alert(`✅ ${count} entrées renommées en "Bayesian curl"`)
-            }}
-            style={{
-              background: '#16a34a', border: 'none', borderRadius: 8,
-              padding: '8px 16px', color: '#fff', fontSize: 12, fontWeight: 600,
-            }}
-          >
-            Renommer "Curl poulie basse" → "Bayesian curl"
-          </button>
-        </div>
-
         {/* Zone RESET — tout en bas, discrète */}
         <div style={{
           marginTop: 40, padding: '20px 16px',

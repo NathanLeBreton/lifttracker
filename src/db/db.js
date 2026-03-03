@@ -2,10 +2,11 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('LiftTracker')
 
-db.version(3).stores({
+db.version(4).stores({
   sets: '++id, dayId, exo, serie, date, sessionId, bonus',
   sessions: '++id, dayId, date',
   notes: '++id, sessionId, exo',
+  cardio: '++id, date, type',
 })
 
 export async function saveSession(dayId, rows, notes) {
@@ -40,7 +41,7 @@ export async function getLastSessionPerfs(dayId) {
     .toArray()
 
   const perfs = {}
-  const bonusSets = {} // exoName -> nb de séries bonus
+  const bonusSets = {}
 
   sets.forEach(s => {
     perfs[`${s.exo}|${s.serie}`] = { poids: s.poids, reps: s.reps, bonus: s.bonus || false }
@@ -77,4 +78,55 @@ export async function deleteSession(sessionId) {
     await db.notes.where('sessionId').equals(sessionId).delete()
     await db.sessions.delete(sessionId)
   })
+}
+
+// ─── CARDIO ──────────────────────────────────────────────────────────────────
+
+export async function saveCardio(entry) {
+  const date = new Date().toISOString().slice(0, 10)
+  return await db.cardio.add({ ...entry, date })
+}
+
+export async function getAllCardio() {
+  return await db.cardio.orderBy('date').reverse().toArray()
+}
+
+export async function deleteCardio(id) {
+  await db.cardio.delete(id)
+}
+
+export async function getCardioStats() {
+  const all = await db.cardio.orderBy('date').toArray()
+
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1))
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfYear  = new Date(now.getFullYear(), 0, 1)
+
+  const empty = () => ({ sessions: 0, dureeMin: 0, distanceKm: 0, calories: 0 })
+  const stats = { week: empty(), month: empty(), year: empty(), all: empty() }
+
+  all.forEach(s => {
+    const d = new Date(s.date + 'T12:00:00')
+    const duree    = parseInt(s.duree)    || 0
+    const distance = parseFloat(s.distance) || 0
+    const calories = parseInt(s.calories) || 0
+
+    const add = (bucket) => {
+      bucket.sessions++
+      bucket.dureeMin  += duree
+      bucket.distanceKm += distance
+      bucket.calories  += calories
+    }
+
+    add(stats.all)
+    if (d >= startOfYear)  add(stats.year)
+    if (d >= startOfMonth) add(stats.month)
+    if (d >= startOfWeek)  add(stats.week)
+  })
+
+  return stats
 }

@@ -1,6 +1,3 @@
-// Programme de musculation — 6 jours
-// Structure: day -> muscles -> exercises
-
 export const PROGRAMME = [
   {
     id: 'lundi',
@@ -15,8 +12,8 @@ export const PROGRAMME = [
         { name: 'Incline Press',       sets: 2, reps: '6–10',  rir: '1–2' },
       ]},
       { name: 'DOS (rappel)', color: '#3b82f6', exercises: [
-        { name: 'Cable Pull-over',              sets: 3, reps: '12–20', rir: '0–1' },
-        { name: 'Rowing horizontal poulie basse', sets: 2, reps: '8–12', rir: '~2' },
+        { name: 'Cable Pull-over',                sets: 3, reps: '12–20', rir: '0–1' },
+        { name: 'Rowing horizontal poulie basse', sets: 2, reps: '8–12',  rir: '~2'  },
       ]},
     ],
   },
@@ -27,7 +24,6 @@ export const PROGRAMME = [
     accent: '#a855f7',
     muscles: [
       { name: 'DELTS', color: '#a855f7', exercises: [
-        { name: 'Shoulder Press machine',           sets: 3, reps: '8–12',  rir: '1–2' },
         { name: 'Élévation latérale machine bilat', sets: 3, reps: '12–20', rir: '0–1' },
         { name: 'Face pull poulie',                 sets: 3, reps: '12–20', rir: '0–1' },
       ]},
@@ -36,7 +32,7 @@ export const PROGRAMME = [
         { name: 'Tirage triceps nuque overhead', sets: 3, reps: '10–15', rir: '0–1' },
       ]},
       { name: 'BICEPS', color: '#10b981', exercises: [
-        { name: 'Curl poulie basse',   sets: 3, reps: '8–12',  rir: '0–1' },
+        { name: 'Bayesian curl',       sets: 3, reps: '8–12',  rir: '0–1', unilateral: true },
         { name: 'Curl marteau poulie', sets: 3, reps: '10–15', rir: '0–1' },
       ]},
     ],
@@ -64,15 +60,15 @@ export const PROGRAMME = [
     accent: '#3b82f6',
     muscles: [
       { name: 'DOS', color: '#3b82f6', exercises: [
-        { name: 'Rowing T-bar chest-supported', sets: 2, reps: '6–10',  rir: '1–2' },
-        { name: 'Pulldown unilatéral',          sets: 2, reps: '8–12',  rir: '1–2' },
-        { name: 'Pull-over poulie',             sets: 3, reps: '12–20', rir: '0–1' },
-        { name: 'Straight-arm pulldown',        sets: 2, reps: '12–20', rir: '0–1' },
-        { name: 'Face pull',                    sets: 2, reps: '15–25', rir: '0–1' },
+        { name: 'Rowing Unilatéral chest-supported', sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
+        { name: 'Pulldown unilatéral',               sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
+        { name: 'Rowing horizontal poulie basse',    sets: 2, reps: '8–12',  rir: '~2'  },
+        { name: 'Lat Pulldown poulie',               sets: 2, reps: '8–12',  rir: '1–2' },
+        { name: 'Pull-over poulie',                  sets: 3, reps: '12–20', rir: '0–1' },
       ]},
       { name: 'PECS (rappel)', color: '#ef4444', exercises: [
-        { name: 'Pec Deck',                 sets: 2, reps: '12–20', rir: '0–1' },
-        { name: 'Chest Press léger/modéré', sets: 2, reps: '8–12',  rir: '2'   },
+        { name: 'Pec Deck',       sets: 2, reps: '12–20', rir: '0–1' },
+        { name: 'Chest Press',    sets: 2, reps: '8–12',  rir: '2'   },
       ]},
     ],
   },
@@ -83,12 +79,12 @@ export const PROGRAMME = [
     accent: '#a855f7',
     muscles: [
       { name: 'ÉPAULES', color: '#a855f7', exercises: [
-        { name: 'Shoulder Press machine',           sets: 2, reps: '6–10',  rir: '1–2' },
-        { name: 'Élévation latérale haltères',      sets: 2, reps: '10–20', rir: '0–1' },
-        { name: 'Reverse Fly',                      sets: 2, reps: '12–20', rir: '0–1' },
-        { name: 'Élévation latérale machine',       sets: 3, reps: '12–20', rir: '0–1' },
-        { name: 'Shrugs',                           sets: 2, reps: '8–12',  rir: '1–2' },
-        { name: 'Élévation frontale',               sets: 2, reps: '10–15', rir: '0–1' },
+        { name: 'Shoulder Press machine',      sets: 2, reps: '6–10',  rir: '1–2' },
+        { name: 'Élévation latérale haltères', sets: 2, reps: '10–20', rir: '0–1' },
+        { name: 'Reverse Fly',                 sets: 2, reps: '12–20', rir: '0–1' },
+        { name: 'Élévation latérale machine',  sets: 3, reps: '12–20', rir: '0–1' },
+        { name: 'Shrugs',                      sets: 2, reps: '8–12',  rir: '1–2' },
+        { name: 'Élévation frontale',          sets: 2, reps: '10–15', rir: '0–1' },
       ]},
     ],
   },
@@ -99,7 +95,7 @@ export const PROGRAMME = [
     accent: '#f97316',
     muscles: [
       { name: 'BICEPS', color: '#10b981', exercises: [
-        { name: 'Curl incliné', sets: 3, reps: '8–12',  rir: '0–1' },
+        { name: 'Curl incliné', sets: 3, reps: '8–12',  rir: '0–1', unilateral: true },
         { name: 'Curl pupitre', sets: 3, reps: '10–15', rir: '0–1' },
         { name: 'Curl marteau', sets: 3, reps: '10–15', rir: '0–1' },
       ]},

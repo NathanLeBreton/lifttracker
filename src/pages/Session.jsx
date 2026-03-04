@@ -75,6 +75,14 @@ export default function Session({ day, onBack, onValidate }) {
     setNotes(prev => ({ ...prev, [exo]: val }))
   }
 
+  const handleBack = () => {
+    const hasData = Object.values(inputs).some(inp => inp.poids || inp.reps)
+    if (hasData) {
+      if (!window.confirm('Tu as des données saisies. Quitter la séance ?')) return
+    }
+    onBack()
+  }
+
   const addExtraSet = (exoName) => {
     setExtraSets(prev => ({ ...prev, [exoName]: (prev[exoName] || 0) + 1 }))
   }
@@ -155,7 +163,7 @@ export default function Session({ day, onBack, onValidate }) {
         borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 14,
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <button onClick={onBack} style={{
+        <button onClick={handleBack} style={{
           width: 36, height: 36, borderRadius: 10, background: '#1a1a2e',
           border: 'none', color: '#a0a0c0', fontSize: 20,
           display: 'flex', alignItems: 'center', justifyContent: 'center',

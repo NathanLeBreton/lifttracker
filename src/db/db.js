@@ -130,3 +130,18 @@ export async function getCardioStats() {
 
   return stats
 }
+
+export async function getSessionsThisWeek() {
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1))
+  monday.setHours(0, 0, 0, 0)
+  const mondayStr = monday.toISOString().slice(0, 10)
+
+  const sessions = await db.sessions
+    .where('date').aboveOrEqual(mondayStr)
+    .toArray()
+
+  // Retourne un Set des dayId faits cette semaine
+  return new Set(sessions.map(s => s.dayId))
+}

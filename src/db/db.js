@@ -145,3 +145,24 @@ export async function getSessionsThisWeek() {
   // Retourne un Set des dayId faits cette semaine
   return new Set(sessions.map(s => s.dayId))
 }
+
+export async function getWeekStreak() {
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1))
+  monday.setHours(0, 0, 0, 0)
+  const mondayStr = monday.toISOString().slice(0, 10)
+
+  const [muscuSessions, cardioSessions] = await Promise.all([
+    db.sessions.where('date').aboveOrEqual(mondayStr).toArray(),
+    db.cardio.where('date').aboveOrEqual(mondayStr).toArray(),
+  ])
+
+  // Nb de jours distincts avec activité (muscu ou cardio)
+  const days = new Set([
+    ...muscuSessions.map(s => s.date),
+    ...cardioSessions.map(s => s.date),
+  ])
+
+  return { sessions: muscuSessions.length, days: days.size }
+}

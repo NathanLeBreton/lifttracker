@@ -2,17 +2,17 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('LiftTracker')
 
-db.version(4).stores({
+db.version(5).stores({
   sets: '++id, dayId, exo, serie, date, sessionId, bonus',
-  sessions: '++id, dayId, date',
+  sessions: '++id, dayId, date, dureeMin',
   notes: '++id, sessionId, exo',
   cardio: '++id, date, type',
 })
 
-export async function saveSession(dayId, rows, notes) {
+export async function saveSession(dayId, rows, notes, dureeMin) {
   const date = new Date().toISOString().slice(0, 10)
   await db.transaction('rw', db.sessions, db.sets, db.notes, async () => {
-    const sessionId = await db.sessions.add({ dayId, date })
+    const sessionId = await db.sessions.add({ dayId, date, dureeMin: dureeMin || 0 })
     const records = rows.map(r => ({ ...r, dayId, date, sessionId }))
     await db.sets.bulkAdd(records)
     if (notes) {
@@ -142,7 +142,6 @@ export async function getSessionsThisWeek() {
     .where('date').aboveOrEqual(mondayStr)
     .toArray()
 
-  // Retourne un Set des dayId faits cette semaine
   return new Set(sessions.map(s => s.dayId))
 }
 
@@ -158,7 +157,6 @@ export async function getWeekStreak() {
     db.cardio.where('date').aboveOrEqual(mondayStr).toArray(),
   ])
 
-  // Nb de jours distincts avec activité (muscu ou cardio)
   const days = new Set([
     ...muscuSessions.map(s => s.date),
     ...cardioSessions.map(s => s.date),

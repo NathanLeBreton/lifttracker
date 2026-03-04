@@ -98,33 +98,47 @@ export default function Session({ day, onBack, onValidate }) {
 
   const handleValidate = () => {
     const rows = []
+    const errors = []
+  
     day.muscles.forEach(m => {
       m.exercises.forEach(ex => {
         const total = getExoTotalSets(ex.name)
         for (let s = 1; s <= total; s++) {
           const isBonus = s > ex.sets
           if (ex.unilateral) {
-            const kG = key(ex.name, s, 'G')
-            const kD = key(ex.name, s, 'D')
-            const inpG = inputs[kG] || {}
-            const inpD = inputs[kD] || {}
-            rows.push({ exo: ex.name, serie: `S${s}G`, poids: inpG.poids || '', reps: inpG.reps || '', bonus: isBonus })
-            rows.push({ exo: ex.name, serie: `S${s}D`, poids: inpD.poids || '', reps: inpD.reps || '', bonus: isBonus })
+            const sides = ['G', 'D']
+            sides.forEach(side => {
+              const k = key(ex.name, s, side)
+              const inp = inputs[k] || {}
+              const hasPoids = isValidPoids(inp.poids || '')
+              const hasReps  = isValidReps(inp.reps || '')
+              if (hasPoids && !hasReps) errors.push(`${ex.name} S${s}${side} — poids saisi mais reps manquants`)
+              if (!hasPoids && hasReps) errors.push(`${ex.name} S${s}${side} — reps saisis mais poids manquant`)
+              if (hasPoids && hasReps) rows.push({ exo: ex.name, serie: `S${s}${side}`, poids: inp.poids, reps: inp.reps, bonus: isBonus })
+            })
           } else {
-            const k2 = key(ex.name, s)
+            const k2  = key(ex.name, s)
             const inp = inputs[k2] || {}
-            rows.push({ exo: ex.name, serie: `S${s}`, poids: inp.poids || '', reps: inp.reps || '', bonus: isBonus })
+            const hasPoids = isValidPoids(inp.poids || '')
+            const hasReps  = isValidReps(inp.reps || '')
+            if (hasPoids && !hasReps) errors.push(`${ex.name} S${s} — poids saisi mais reps manquants`)
+            if (!hasPoids && hasReps) errors.push(`${ex.name} S${s} — reps saisis mais poids manquant`)
+            if (hasPoids && hasReps) rows.push({ exo: ex.name, serie: `S${s}`, poids: inp.poids, reps: inp.reps, bonus: isBonus })
           }
         }
       })
     })
-    const filled = rows.filter(r => r.poids || r.reps)
-    if (filled.length === 0) { alert("Aucune perf saisie !"); return }
-    if (!window.confirm(`Valider la séance ? (${filled.length} séries enregistrées)`)) return
+  
+    if (errors.length > 0) {
+      alert(`⚠️ Certaines séries sont incomplètes :\n\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n...et ${errors.length - 5} autre(s)` : ''}`)
+      return
+    }
+    if (rows.length === 0) { alert("Aucune perf saisie !"); return }
+    if (!window.confirm(`Valider la séance ? (${rows.length} séries enregistrées)`)) return
     sessionStorage.removeItem(STORAGE_KEY + '_inputs')
     sessionStorage.removeItem(STORAGE_KEY + '_notes')
     sessionStorage.removeItem(STORAGE_KEY + '_extra')
-    onValidate(day.id, filled, notes)
+    onValidate(day.id, rows, notes)
   }
 
   if (loading) return (

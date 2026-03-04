@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getLastSessionPerfs } from '../db/db'
 import RestTimer from '../components/RestTimer'
 import { FICHES } from '../data/exerciceFiches'
@@ -25,6 +25,14 @@ const inputStyle = (value, validator) => {
   }
 }
 
+const fmtChrono = (secs) => {
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export default function Session({ day, onBack, onValidate }) {
   const STORAGE_KEY = `session_draft_${day.id}`
 
@@ -43,6 +51,8 @@ export default function Session({ day, onBack, onValidate }) {
   const [showTimer, setShowTimer] = useState(false)
   const [ficheOpen, setFicheOpen] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [elapsed, setElapsed] = useState(0)
+  const startTimeRef = useRef(Date.now())
 
   useEffect(() => {
     getLastSessionPerfs(day.id).then(({ perfs, notes: n, bonusSets }) => {
@@ -52,6 +62,14 @@ export default function Session({ day, onBack, onValidate }) {
       setLoading(false)
     })
   }, [day.id])
+
+  // Chrono
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY + '_inputs', JSON.stringify(inputs))
@@ -75,14 +93,6 @@ export default function Session({ day, onBack, onValidate }) {
     setNotes(prev => ({ ...prev, [exo]: val }))
   }
 
-  const handleBack = () => {
-    const hasData = Object.values(inputs).some(inp => inp.poids || inp.reps)
-    if (hasData) {
-      if (!window.confirm('Tu as des données saisies. Quitter la séance ?')) return
-    }
-    onBack()
-  }
-
   const addExtraSet = (exoName) => {
     setExtraSets(prev => ({ ...prev, [exoName]: (prev[exoName] || 0) + 1 }))
   }
@@ -104,10 +114,18 @@ export default function Session({ day, onBack, onValidate }) {
     return base + extra
   }
 
+  const handleBack = () => {
+    const hasData = Object.values(inputs).some(inp => inp.poids || inp.reps)
+    if (hasData) {
+      if (!window.confirm('Tu as des données saisies. Quitter la séance ?')) return
+    }
+    onBack()
+  }
+
   const handleValidate = () => {
     const rows = []
     const errors = []
-  
+
     day.muscles.forEach(m => {
       m.exercises.forEach(ex => {
         const total = getExoTotalSets(ex.name)
@@ -136,17 +154,20 @@ export default function Session({ day, onBack, onValidate }) {
         }
       })
     })
-  
+
     if (errors.length > 0) {
       alert(`⚠️ Certaines séries sont incomplètes :\n\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n...et ${errors.length - 5} autre(s)` : ''}`)
       return
     }
     if (rows.length === 0) { alert("Aucune perf saisie !"); return }
-    if (!window.confirm(`Valider la séance ? (${rows.length} séries enregistrées)`)) return
+
+    const dureeMin = Math.round(elapsed / 60)
+    if (!window.confirm(`Valider la séance ? (${rows.length} séries — ${fmtChrono(elapsed)})`)) return
+
     sessionStorage.removeItem(STORAGE_KEY + '_inputs')
     sessionStorage.removeItem(STORAGE_KEY + '_notes')
     sessionStorage.removeItem(STORAGE_KEY + '_extra')
-    onValidate(day.id, rows, notes)
+    onValidate(day.id, rows, notes, dureeMin)
   }
 
   if (loading) return (
@@ -157,7 +178,7 @@ export default function Session({ day, onBack, onValidate }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header — sans bouton Valider */}
+      {/* Header */}
       <div style={{
         padding: '16px 20px 14px', background: '#0d0d14',
         borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 14,
@@ -174,11 +195,23 @@ export default function Session({ day, onBack, onValidate }) {
           </div>
           <div style={{ fontSize: 11, color: '#6b6b8a', marginTop: 2 }}>{day.subtitle}</div>
         </div>
+        {/* Chrono */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: '#1a1a2e', borderRadius: 10, padding: '6px 12px',
+        }}>
+          <span style={{ fontSize: 12 }}>⏱</span>
+          <span style={{
+            fontFamily: "'Bebas Neue', sans-serif", fontSize: 18,
+            color: elapsed >= 3600 ? '#ef4444' : elapsed >= 1800 ? '#f97316' : '#a78bfa',
+            letterSpacing: 1,
+          }}>{fmtChrono(elapsed)}</span>
+        </div>
         <button onClick={() => setShowTimer(true)} style={{
           width: 36, height: 36, borderRadius: 10, background: '#1a1a2e',
           border: 'none', color: '#a78bfa', fontSize: 18,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>⏱</button>
+        }}>⏸</button>
       </div>
 
       {/* Body */}
@@ -216,37 +249,30 @@ export default function Session({ day, onBack, onValidate }) {
         ))}
 
         {/* Bouton Valider en bas */}
-        <button
-          onClick={handleValidate}
-          style={{
-            width: '100%', padding: '16px',
-            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-            border: 'none', borderRadius: 14,
-            color: '#fff', fontSize: 16, fontWeight: 700,
-            letterSpacing: 0.5,
-          }}
-        >
-          ✓ Valider la séance
+        <button onClick={handleValidate} style={{
+          width: '100%', padding: '16px',
+          background: 'linear-gradient(135deg, #16a34a, #15803d)',
+          border: 'none', borderRadius: 14,
+          color: '#fff', fontSize: 16, fontWeight: 700, letterSpacing: 0.5,
+        }}>
+          ✓ Valider la séance — {fmtChrono(elapsed)}
         </button>
       </div>
 
       {showTimer && <RestTimer onClose={() => setShowTimer(false)} />}
 
-      {/* Modale fiche exercice */}
+      {/* Modale fiche */}
       {ficheOpen && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
           display: 'flex', alignItems: 'flex-end', zIndex: 200,
           backdropFilter: 'blur(4px)',
         }} onClick={() => setFicheOpen(null)}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              width: '100%', maxWidth: 430, margin: '0 auto',
-              background: '#12121e', borderRadius: '20px 20px 0 0',
-              padding: '24px 20px 40px', maxHeight: '80vh', overflowY: 'auto',
-            }}
-          >
+          <div onClick={e => e.stopPropagation()} style={{
+            width: '100%', maxWidth: 430, margin: '0 auto',
+            background: '#12121e', borderRadius: '20px 20px 0 0',
+            padding: '24px 20px 40px', maxHeight: '80vh', overflowY: 'auto',
+          }}>
             {(() => {
               const fiche = FICHES[ficheOpen]
               return (
@@ -261,19 +287,14 @@ export default function Session({ day, onBack, onValidate }) {
                     }}>✕</button>
                   </div>
                   {!fiche ? (
-                    <div style={{ color: '#4a4a6a', fontSize: 13, fontStyle: 'italic' }}>
-                      Pas encore de fiche pour cet exercice.
-                    </div>
+                    <div style={{ color: '#4a4a6a', fontSize: 13, fontStyle: 'italic' }}>Pas encore de fiche pour cet exercice.</div>
                   ) : (
                     <>
                       <div style={{ marginBottom: 16 }}>
                         <FicheSectionTitle>🎯 Muscles ciblés</FicheSectionTitle>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {fiche.muscles.map(m => (
-                            <span key={m} style={{
-                              background: '#1e1e35', borderRadius: 6, padding: '4px 10px',
-                              fontSize: 12, color: '#a78bfa',
-                            }}>{m}</span>
+                            <span key={m} style={{ background: '#1e1e35', borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#a78bfa' }}>{m}</span>
                           ))}
                         </div>
                       </div>
@@ -326,7 +347,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
       background: '#12121e', border: '1px solid #1a1a2e',
       borderRadius: 14, overflow: 'hidden', marginBottom: 8,
     }}>
-      {/* Header */}
       <div style={{
         padding: '12px 14px 10px', display: 'flex',
         alignItems: 'flex-start', justifyContent: 'space-between',
@@ -336,20 +356,14 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e8f0', lineHeight: 1.2 }}>{ex.name}</div>
             {ex.unilateral && (
-              <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#1a2a1a', color: '#10b981', letterSpacing: 0.5 }}>
-                UNILAT
-              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: '#1a2a1a', color: '#10b981', letterSpacing: 0.5 }}>UNILAT</span>
             )}
           </div>
           <div style={{ fontSize: 11, color: '#4a4a6a', marginTop: 3 }}>{ex.sets} séries</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#1e1e35', color: '#6b6b8a' }}>
-            {ex.reps}
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#2d1f4a', color: '#a78bfa' }}>
-            RIR {ex.rir}
-          </span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#1e1e35', color: '#6b6b8a' }}>{ex.reps}</span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#2d1f4a', color: '#a78bfa' }}>RIR {ex.rir}</span>
           <button onClick={onFiche} style={{
             background: '#1a1a2e', border: 'none', borderRadius: 6,
             width: 26, height: 26, color: '#6b6b8a', fontSize: 14,
@@ -358,26 +372,19 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         </div>
       </div>
 
-      {/* Note S-1 */}
       {lastNote && (
-        <div style={{
-          padding: '7px 14px', background: '#0f0f1a',
-          borderBottom: '1px solid #1a1a2e',
-          display: 'flex', alignItems: 'flex-start', gap: 6,
-        }}>
+        <div style={{ padding: '7px 14px', background: '#0f0f1a', borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
           <span style={{ fontSize: 10, color: '#533483', marginTop: 1 }}>💬</span>
           <span style={{ fontSize: 11, color: '#6b5fa0', fontStyle: 'italic', lineHeight: 1.5 }}>S-1 : {lastNote}</span>
         </div>
       )}
 
-      {/* Table header */}
       <div style={{ display: 'grid', gridTemplateColumns: ex.unilateral ? '36px 1fr 1fr 1fr 1fr' : '32px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
         {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
           <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
         ))}
       </div>
 
-      {/* Séries */}
       {allSets.map(s => {
         const isBonus = s > ex.sets
 
@@ -400,14 +407,8 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
                 <span style={{ fontSize: 10, fontWeight: 700, color }}>{isBonus ? `＋${side}` : label}</span>
                 <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.poids || '—'}</span>
                 <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.reps || '—'}</span>
-                <input type="number" placeholder="kg" value={inp.poids || ''}
-                  onChange={e => onInput(k, 'poids', e.target.value)}
-                  style={inputStyle(inp.poids || '', isValidPoids)}
-                />
-                <input type="number" placeholder="reps" value={inp.reps || ''}
-                  onChange={e => onInput(k, 'reps', e.target.value)}
-                  style={inputStyle(inp.reps || '', isValidReps)}
-                />
+                <input type="number" placeholder="kg" value={inp.poids || ''} onChange={e => onInput(k, 'poids', e.target.value)} style={inputStyle(inp.poids || '', isValidPoids)} />
+                <input type="number" placeholder="reps" value={inp.reps || ''} onChange={e => onInput(k, 'reps', e.target.value)} style={inputStyle(inp.reps || '', isValidReps)} />
               </div>
             )
           })
@@ -423,24 +424,15 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             borderTop: '1px solid #14141f',
             background: isBonus ? '#0d0d18' : 'transparent',
           }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: isBonus ? '#533483' : '#4a4a6a' }}>
-              {isBonus ? '＋' : `S${s}`}
-            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: isBonus ? '#533483' : '#4a4a6a' }}>{isBonus ? '＋' : `S${s}`}</span>
             <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.poids || '—'}</span>
             <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.reps || '—'}</span>
-            <input type="number" placeholder="kg" value={inp.poids || ''}
-              onChange={e => onInput(k, 'poids', e.target.value)}
-              style={inputStyle(inp.poids || '', isValidPoids)}
-            />
-            <input type="number" placeholder="reps" value={inp.reps || ''}
-              onChange={e => onInput(k, 'reps', e.target.value)}
-              style={inputStyle(inp.reps || '', isValidReps)}
-            />
+            <input type="number" placeholder="kg" value={inp.poids || ''} onChange={e => onInput(k, 'poids', e.target.value)} style={inputStyle(inp.poids || '', isValidPoids)} />
+            <input type="number" placeholder="reps" value={inp.reps || ''} onChange={e => onInput(k, 'reps', e.target.value)} style={inputStyle(inp.reps || '', isValidReps)} />
           </div>
         )
       })}
 
-      {/* Séries bonus S-1 read-only */}
       {lastBonusArr.map(s => {
         const prev = lastPerfs[`${ex.name}|S${s}`]
         if (!prev || (!prev.poids && !prev.reps)) return null
@@ -458,7 +450,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         )
       })}
 
-      {/* Footer */}
       <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a2e', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={onAddSet} style={{
@@ -473,15 +464,11 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           )}
         </div>
         <textarea
-          value={note}
-          onChange={e => onNote(ex.name, e.target.value)}
-          placeholder="Note sur cet exercice..."
-          rows={2}
+          value={note} onChange={e => onNote(ex.name, e.target.value)}
+          placeholder="Note sur cet exercice..." rows={2}
           style={{
-            background: '#0f0f1a', border: '1px solid #1e1e35',
-            borderRadius: 8, padding: '8px 10px',
-            color: '#a0a0c0', fontSize: 12, fontStyle: 'italic',
-            width: '100%', outline: 'none', resize: 'none',
+            background: '#0f0f1a', border: '1px solid #1e1e35', borderRadius: 8, padding: '8px 10px',
+            color: '#a0a0c0', fontSize: 12, fontStyle: 'italic', width: '100%', outline: 'none', resize: 'none',
             fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5,
           }}
         />

@@ -10,9 +10,17 @@ const MUSCLE_COLORS = {
 }
 
 export default function Session({ day, onBack, onValidate }) {
-  const [inputs, setInputs] = useState({})
-  const [notes, setNotes] = useState({})
-  const [extraSets, setExtraSets] = useState({})
+  const STORAGE_KEY = `session_draft_${day.id}`
+
+  const [inputs, setInputs] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY + '_inputs')) || {} } catch { return {} }
+  })
+  const [notes, setNotes] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY + '_notes')) || {} } catch { return {} }
+  })
+  const [extraSets, setExtraSets] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY + '_extra')) || {} } catch { return {} }
+  })
   const [lastPerfs, setLastPerfs] = useState({})
   const [lastNotes, setLastNotes] = useState({})
   const [lastBonusSets, setLastBonusSets] = useState({})
@@ -28,6 +36,18 @@ export default function Session({ day, onBack, onValidate }) {
       setLoading(false)
     })
   }, [day.id])
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY + '_inputs', JSON.stringify(inputs))
+  }, [inputs])
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY + '_notes', JSON.stringify(notes))
+  }, [notes])
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY + '_extra', JSON.stringify(extraSets))
+  }, [extraSets])
 
   const key = (exo, s, side) => side ? `${exo}|S${s}|${side}` : `${exo}|S${s}`
 
@@ -85,6 +105,9 @@ export default function Session({ day, onBack, onValidate }) {
     const filled = rows.filter(r => r.poids || r.reps)
     if (filled.length === 0) { alert("Aucune perf saisie !"); return }
     if (!window.confirm(`Valider la séance ? (${filled.length} séries enregistrées)`)) return
+    sessionStorage.removeItem(STORAGE_KEY + '_inputs')
+    sessionStorage.removeItem(STORAGE_KEY + '_notes')
+    sessionStorage.removeItem(STORAGE_KEY + '_extra')
     onValidate(day.id, filled, notes)
   }
 
@@ -160,7 +183,6 @@ export default function Session({ day, onBack, onValidate }) {
 
       {showTimer && <RestTimer onClose={() => setShowTimer(false)} />}
 
-      {/* Modale fiche exercice */}
       {ficheOpen && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
@@ -257,7 +279,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
       background: '#12121e', border: '1px solid #1a1a2e',
       borderRadius: 14, overflow: 'hidden', marginBottom: 8,
     }}>
-      {/* Header */}
       <div style={{
         padding: '12px 14px 10px', display: 'flex',
         alignItems: 'flex-start', justifyContent: 'space-between',
@@ -290,7 +311,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         </div>
       </div>
 
-      {/* Note S-1 */}
       {lastNote && (
         <div style={{
           padding: '7px 14px', background: '#0f0f1a',
@@ -304,7 +324,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         </div>
       )}
 
-      {/* Table header */}
       {ex.unilateral ? (
         <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
           {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
@@ -319,7 +338,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         </div>
       )}
 
-      {/* Séries */}
       {allSets.map(s => {
         const isBonus = s > ex.sets
 
@@ -420,7 +438,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         )
       })}
 
-      {/* Séries bonus S-1 read-only */}
       {lastBonusArr.map(s => {
         const prev = lastPerfs[`${ex.name}|S${s}`]
         if (!prev || (!prev.poids && !prev.reps)) return null
@@ -440,7 +457,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         )
       })}
 
-      {/* Footer : + série / note */}
       <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a2e', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={onAddSet} style={{

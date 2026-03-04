@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getLastSessionPerfs } from '../db/db'
 import RestTimer from '../components/RestTimer'
+import { FICHES } from '../data/exerciceFiches'
 
 const MUSCLE_COLORS = {
   'PECS': '#ef4444', 'DOS (rappel)': '#3b82f6', 'DOS': '#3b82f6',
@@ -16,6 +17,7 @@ export default function Session({ day, onBack, onValidate }) {
   const [lastNotes, setLastNotes] = useState({})
   const [lastBonusSets, setLastBonusSets] = useState({})
   const [showTimer, setShowTimer] = useState(false)
+  const [ficheOpen, setFicheOpen] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function Session({ day, onBack, onValidate }) {
                 onNote={handleNote}
                 onAddSet={() => addExtraSet(ex.name)}
                 onRemoveSet={() => removeExtraSet(ex.name)}
+                onFiche={() => setFicheOpen(ex.name)}
                 keyFn={key}
               />
             ))}
@@ -156,11 +159,94 @@ export default function Session({ day, onBack, onValidate }) {
       </div>
 
       {showTimer && <RestTimer onClose={() => setShowTimer(false)} />}
+
+      {/* Modale fiche exercice */}
+      {ficheOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'flex-end', zIndex: 200,
+          backdropFilter: 'blur(4px)',
+        }} onClick={() => setFicheOpen(null)}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 430, margin: '0 auto',
+              background: '#12121e', borderRadius: '20px 20px 0 0',
+              padding: '24px 20px 40px', maxHeight: '80vh', overflowY: 'auto',
+            }}
+          >
+            {(() => {
+              const fiche = FICHES[ficheOpen]
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: '#fff', letterSpacing: 1, flex: 1, paddingRight: 12 }}>
+                      {ficheOpen}
+                    </div>
+                    <button onClick={() => setFicheOpen(null)} style={{
+                      background: '#1a1a2e', border: 'none', borderRadius: 8,
+                      width: 32, height: 32, color: '#6b6b8a', fontSize: 16,
+                    }}>✕</button>
+                  </div>
+
+                  {!fiche ? (
+                    <div style={{ color: '#4a4a6a', fontSize: 13, fontStyle: 'italic' }}>
+                      Pas encore de fiche pour cet exercice.
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ marginBottom: 16 }}>
+                        <FicheSectionTitle>🎯 Muscles ciblés</FicheSectionTitle>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {fiche.muscles.map(m => (
+                            <span key={m} style={{
+                              background: '#1e1e35', borderRadius: 6, padding: '4px 10px',
+                              fontSize: 12, color: '#a78bfa',
+                            }}>{m}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ marginBottom: 16 }}>
+                        <FicheSectionTitle>✅ Conseils d'exécution</FicheSectionTitle>
+                        {fiche.conseils.map((c, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <span style={{ color: '#16a34a', fontSize: 12, marginTop: 1, flexShrink: 0 }}>•</span>
+                            <span style={{ fontSize: 13, color: '#c0c0d8', lineHeight: 1.6 }}>{c}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div>
+                        <FicheSectionTitle>⚠️ Erreurs communes</FicheSectionTitle>
+                        {fiche.erreurs.map((e, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <span style={{ color: '#ef4444', fontSize: 12, marginTop: 1, flexShrink: 0 }}>•</span>
+                            <span style={{ fontSize: 13, color: '#c0c0d8', lineHeight: 1.6 }}>{e}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, extraSetsCount, onInput, onNote, onAddSet, onRemoveSet, keyFn }) {
+function FicheSectionTitle({ children }) {
+  return (
+    <div style={{ fontSize: 10, fontWeight: 700, color: '#6b6b8a', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+      {children}
+    </div>
+  )
+}
+
+function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, extraSetsCount, onInput, onNote, onAddSet, onRemoveSet, onFiche, keyFn }) {
   const baseSets  = Array.from({ length: ex.sets }, (_, i) => i + 1)
   const bonusSets = Array.from({ length: extraSetsCount }, (_, i) => ex.sets + i + 1)
   const allSets   = [...baseSets, ...bonusSets]
@@ -177,7 +263,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
         alignItems: 'flex-start', justifyContent: 'space-between',
         borderBottom: '1px solid #1a1a2e',
       }}>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#e8e8f0', lineHeight: 1.2 }}>{ex.name}</div>
             {ex.unilateral && (
@@ -188,13 +274,19 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           </div>
           <div style={{ fontSize: 11, color: '#4a4a6a', marginTop: 3 }}>{ex.sets} séries</div>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#1e1e35', color: '#6b6b8a' }}>
             {ex.reps}
           </span>
           <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#2d1f4a', color: '#a78bfa' }}>
             RIR {ex.rir}
           </span>
+          <button onClick={onFiche} style={{
+            background: '#1a1a2e', border: 'none', borderRadius: 6,
+            width: 26, height: 26, color: '#6b6b8a', fontSize: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>ℹ</button>
         </div>
       </div>
 
@@ -283,7 +375,6 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           })
         }
 
-        // Exercice normal
         const k = keyFn(ex.name, s)
         const inp = inputs[k] || {}
         const prev = lastPerfs[`${ex.name}|S${s}`]

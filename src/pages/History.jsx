@@ -4,6 +4,13 @@ import { PROGRAMME } from '../data/programme'
 
 const DAY_LABELS = Object.fromEntries(PROGRAMME.map(d => [d.id, `${d.label} – ${d.subtitle}`]))
 
+const fmtDuree = (min) => {
+  if (!min) return null
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return h > 0 ? `${h}h${m > 0 ? m + 'min' : ''}` : `${m}min`
+}
+
 export default function History({ refreshKey }) {
   const [data, setData] = useState([])
   const [open, setOpen] = useState(null)
@@ -82,8 +89,18 @@ export default function History({ refreshKey }) {
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1, color: '#fff' }}>
                   {DAY_LABELS[session.dayId] || session.dayId}
                 </div>
-                <div style={{ fontSize: 11, color: '#4a4a6a', marginTop: 2 }}>
-                  {formatDate(session.date)} · {session.sets.length} séries
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                  <span style={{ fontSize: 11, color: '#4a4a6a' }}>
+                    {formatDate(session.date)} · {session.sets.length} séries
+                  </span>
+                  {fmtDuree(session.dureeMin) && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 4,
+                      background: '#1a1a2e', color: '#a78bfa',
+                    }}>
+                      ⏱ {fmtDuree(session.dureeMin)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -122,11 +139,10 @@ export default function History({ refreshKey }) {
           </div>
         ))}
 
-        {/* Zone RESET — tout en bas, discrète */}
+        {/* Zone RESET */}
         <div style={{
           marginTop: 40, padding: '20px 16px',
-          border: '1px solid #2a0f0f', borderRadius: 14,
-          background: '#120808',
+          border: '1px solid #2a0f0f', borderRadius: 14, background: '#120808',
         }}>
           <div style={{ fontSize: 11, color: '#6b2020', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
             ⚠️ Zone dangereuse
@@ -134,54 +150,32 @@ export default function History({ refreshKey }) {
           <div style={{ fontSize: 12, color: '#4a2020', marginBottom: 12, lineHeight: 1.6 }}>
             Supprime toutes les séances et données de progression. Action irréversible.
           </div>
-
           {!showResetConfirm ? (
-            <button
-              onClick={handleResetClick}
-              style={{
-                background: 'transparent', border: '1px solid #6b2020',
-                borderRadius: 8, padding: '8px 16px',
-                color: '#6b2020', fontSize: 12, fontWeight: 600,
-              }}
-            >
-              Réinitialiser toutes les données
-            </button>
+            <button onClick={handleResetClick} style={{
+              background: 'transparent', border: '1px solid #6b2020',
+              borderRadius: 8, padding: '8px 16px', color: '#6b2020', fontSize: 12, fontWeight: 600,
+            }}>Réinitialiser toutes les données</button>
           ) : (
             <div>
-              <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8, fontWeight: 600 }}>
-                Tape "RESET" pour confirmer :
-              </div>
+              <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8, fontWeight: 600 }}>Tape "RESET" pour confirmer :</div>
               <input
-                type="text"
-                value={resetInput}
-                onChange={e => setResetInput(e.target.value)}
-                placeholder="RESET"
+                type="text" value={resetInput} onChange={e => setResetInput(e.target.value)} placeholder="RESET"
                 style={{
-                  background: '#1a0808', border: '1.5px solid #6b2020',
-                  borderRadius: 8, padding: '8px 12px', color: '#ef4444',
-                  fontSize: 14, fontWeight: 600, width: '100%',
-                  outline: 'none', marginBottom: 10,
+                  background: '#1a0808', border: '1.5px solid #6b2020', borderRadius: 8, padding: '8px 12px',
+                  color: '#ef4444', fontSize: 14, fontWeight: 600, width: '100%', outline: 'none', marginBottom: 10,
                   fontFamily: "'DM Sans', sans-serif",
                 }}
               />
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  style={{
-                    flex: 1, background: '#1a1a2e', border: 'none',
-                    borderRadius: 8, padding: '8px', color: '#6b6b8a', fontSize: 12,
-                  }}
-                >Annuler</button>
-                <button
-                  onClick={handleResetConfirm}
-                  style={{
-                    flex: 1, background: resetInput === 'RESET' ? '#7f1d1d' : '#2a0f0f',
-                    border: 'none', borderRadius: 8, padding: '8px',
-                    color: resetInput === 'RESET' ? '#fca5a5' : '#4a2020',
-                    fontSize: 12, fontWeight: 600,
-                    transition: 'all 0.2s',
-                  }}
-                >Supprimer tout</button>
+                <button onClick={() => setShowResetConfirm(false)} style={{
+                  flex: 1, background: '#1a1a2e', border: 'none', borderRadius: 8, padding: '8px', color: '#6b6b8a', fontSize: 12,
+                }}>Annuler</button>
+                <button onClick={handleResetConfirm} style={{
+                  flex: 1, background: resetInput === 'RESET' ? '#7f1d1d' : '#2a0f0f',
+                  border: 'none', borderRadius: 8, padding: '8px',
+                  color: resetInput === 'RESET' ? '#fca5a5' : '#4a2020',
+                  fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
+                }}>Supprimer tout</button>
               </div>
             </div>
           )}

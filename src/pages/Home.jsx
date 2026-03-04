@@ -59,9 +59,6 @@ export default function Home({ onOpenDay, onViewLastSession }) {
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: '#fff', letterSpacing: 1, lineHeight: 1 }}>
                 {streak.sessions} séance{streak.sessions > 1 ? 's' : ''} cette semaine
               </div>
-              <div style={{ fontSize: 10, color: '#6b6b8a', marginTop: 2 }}>
-                sur {streak.days} jour{streak.days > 1 ? 's' : ''} d'activité
-              </div>
             </div>
           </div>
         )}

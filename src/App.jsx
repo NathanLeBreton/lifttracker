@@ -28,9 +28,9 @@ export default function App() {
     setView('lastSession')
   }
 
-  const handleValidate = async (dayId, rows, notes) => {
+  const handleValidate = async (dayId, rows, notes, dureeMin) => {
     try {
-      await saveSession(dayId, rows, notes)
+      await saveSession(dayId, rows, notes, dureeMin)
       setHistoryKey(k => k + 1)
       showToast(`✅ ${rows.length} séries archivées !`)
       setTimeout(() => setView('home'), 600)

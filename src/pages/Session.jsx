@@ -9,6 +9,22 @@ const MUSCLE_COLORS = {
   'TRICEPS': '#f97316', 'BICEPS': '#10b981', 'JAMBES': '#eab308',
 }
 
+const isValidPoids = (v) => v !== '' && !isNaN(parseFloat(v)) && parseFloat(v) > 0
+const isValidReps  = (v) => v !== '' && /^\d+$/.test(v.trim()) && parseInt(v) > 0
+
+const inputStyle = (value, validator) => {
+  const empty   = value === '' || value === undefined
+  const valid   = !empty && validator(value)
+  const invalid = !empty && !valid
+  return {
+    background: valid ? '#0f1f0f' : invalid ? '#200f0f' : '#1a1a2e',
+    border: `1.5px solid ${valid ? '#16a34a88' : invalid ? '#ef444488' : '#22223a'}`,
+    borderRadius: 8, padding: '7px 6px',
+    color: valid ? '#86efac' : invalid ? '#fca5a5' : '#e8e8f0',
+    fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
+  }
+}
+
 export default function Session({ day, onBack, onValidate }) {
   const STORAGE_KEY = `session_draft_${day.id}`
 
@@ -119,6 +135,7 @@ export default function Session({ day, onBack, onValidate }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header — sans bouton Valider */}
       <div style={{
         padding: '16px 20px 14px', background: '#0d0d14',
         borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 14,
@@ -140,14 +157,10 @@ export default function Session({ day, onBack, onValidate }) {
           border: 'none', color: '#a78bfa', fontSize: 18,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>⏱</button>
-        <button onClick={handleValidate} style={{
-          background: 'linear-gradient(135deg, #16a34a, #15803d)', border: 'none',
-          borderRadius: 10, padding: '8px 14px', color: '#fff',
-          fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
-        }}>✓ Valider</button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 120px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 140px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         {day.muscles.map(muscle => (
           <div key={muscle.name}>
             <div style={{
@@ -179,10 +192,25 @@ export default function Session({ day, onBack, onValidate }) {
             ))}
           </div>
         ))}
+
+        {/* Bouton Valider en bas */}
+        <button
+          onClick={handleValidate}
+          style={{
+            width: '100%', padding: '16px',
+            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+            border: 'none', borderRadius: 14,
+            color: '#fff', fontSize: 16, fontWeight: 700,
+            letterSpacing: 0.5,
+          }}
+        >
+          ✓ Valider la séance
+        </button>
       </div>
 
       {showTimer && <RestTimer onClose={() => setShowTimer(false)} />}
 
+      {/* Modale fiche exercice */}
       {ficheOpen && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
@@ -210,7 +238,6 @@ export default function Session({ day, onBack, onValidate }) {
                       width: 32, height: 32, color: '#6b6b8a', fontSize: 16,
                     }}>✕</button>
                   </div>
-
                   {!fiche ? (
                     <div style={{ color: '#4a4a6a', fontSize: 13, fontStyle: 'italic' }}>
                       Pas encore de fiche pour cet exercice.
@@ -228,7 +255,6 @@ export default function Session({ day, onBack, onValidate }) {
                           ))}
                         </div>
                       </div>
-
                       <div style={{ marginBottom: 16 }}>
                         <FicheSectionTitle>✅ Conseils d'exécution</FicheSectionTitle>
                         {fiche.conseils.map((c, i) => (
@@ -238,7 +264,6 @@ export default function Session({ day, onBack, onValidate }) {
                           </div>
                         ))}
                       </div>
-
                       <div>
                         <FicheSectionTitle>⚠️ Erreurs communes</FicheSectionTitle>
                         {fiche.erreurs.map((e, i) => (
@@ -269,9 +294,9 @@ function FicheSectionTitle({ children }) {
 }
 
 function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, extraSetsCount, onInput, onNote, onAddSet, onRemoveSet, onFiche, keyFn }) {
-  const baseSets  = Array.from({ length: ex.sets }, (_, i) => i + 1)
-  const bonusSets = Array.from({ length: extraSetsCount }, (_, i) => ex.sets + i + 1)
-  const allSets   = [...baseSets, ...bonusSets]
+  const baseSets     = Array.from({ length: ex.sets }, (_, i) => i + 1)
+  const bonusSets    = Array.from({ length: extraSetsCount }, (_, i) => ex.sets + i + 1)
+  const allSets      = [...baseSets, ...bonusSets]
   const lastBonusArr = Array.from({ length: lastBonusCount }, (_, i) => ex.sets + i + 1)
 
   return (
@@ -279,6 +304,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
       background: '#12121e', border: '1px solid #1a1a2e',
       borderRadius: 14, overflow: 'hidden', marginBottom: 8,
     }}>
+      {/* Header */}
       <div style={{
         padding: '12px 14px 10px', display: 'flex',
         alignItems: 'flex-start', justifyContent: 'space-between',
@@ -305,12 +331,12 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           <button onClick={onFiche} style={{
             background: '#1a1a2e', border: 'none', borderRadius: 6,
             width: 26, height: 26, color: '#6b6b8a', fontSize: 14,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>ℹ</button>
         </div>
       </div>
 
+      {/* Note S-1 */}
       {lastNote && (
         <div style={{
           padding: '7px 14px', background: '#0f0f1a',
@@ -318,26 +344,18 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
           display: 'flex', alignItems: 'flex-start', gap: 6,
         }}>
           <span style={{ fontSize: 10, color: '#533483', marginTop: 1 }}>💬</span>
-          <span style={{ fontSize: 11, color: '#6b5fa0', fontStyle: 'italic', lineHeight: 1.5 }}>
-            S-1 : {lastNote}
-          </span>
+          <span style={{ fontSize: 11, color: '#6b5fa0', fontStyle: 'italic', lineHeight: 1.5 }}>S-1 : {lastNote}</span>
         </div>
       )}
 
-      {ex.unilateral ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
-          {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
-            <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
-          {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
-            <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
-          ))}
-        </div>
-      )}
+      {/* Table header */}
+      <div style={{ display: 'grid', gridTemplateColumns: ex.unilateral ? '36px 1fr 1fr 1fr 1fr' : '32px 1fr 1fr 1fr 1fr', padding: '6px 14px', gap: 6 }}>
+        {['', 'S-1 kg', 'S-1 reps', 'kg', 'reps'].map((h, i) => (
+          <span key={i} style={{ fontSize: 9, fontWeight: 600, letterSpacing: 1, color: '#3a3a5a', textTransform: 'uppercase', textAlign: i === 0 ? 'left' : 'center' }}>{h}</span>
+        ))}
+      </div>
 
+      {/* Séries */}
       {allSets.map(s => {
         const isBonus = s > ex.sets
 
@@ -347,7 +365,7 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             { side: 'D', label: `S${s}D`, color: '#f97316' },
           ]
           return sides.map(({ side, label, color }) => {
-            const k = keyFn(ex.name, s, side)
+            const k   = keyFn(ex.name, s, side)
             const inp = inputs[k] || {}
             const prev = lastPerfs[`${ex.name}|${label}`]
             return (
@@ -357,43 +375,23 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
                 borderTop: '1px solid #14141f',
                 background: isBonus ? '#0d0d18' : 'transparent',
               }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color }}>
-                  {isBonus ? `＋${side}` : label}
-                </span>
-                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
-                  {prev?.poids || '—'}
-                </span>
-                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
-                  {prev?.reps || '—'}
-                </span>
-                <input
-                  type="number" placeholder="kg" value={inp.poids || ''}
+                <span style={{ fontSize: 10, fontWeight: 700, color }}>{isBonus ? `＋${side}` : label}</span>
+                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.poids || '—'}</span>
+                <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.reps || '—'}</span>
+                <input type="number" placeholder="kg" value={inp.poids || ''}
                   onChange={e => onInput(k, 'poids', e.target.value)}
-                  style={{
-                    background: inp.poids ? '#200f1a' : '#1a1a2e',
-                    border: `1.5px solid ${inp.poids ? '#ef444488' : '#22223a'}`,
-                    borderRadius: 8, padding: '7px 6px',
-                    color: inp.poids ? '#fca5a5' : '#e8e8f0',
-                    fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
-                  }}
+                  style={inputStyle(inp.poids || '', isValidPoids)}
                 />
-                <input
-                  type="number" placeholder="reps" value={inp.reps || ''}
+                <input type="number" placeholder="reps" value={inp.reps || ''}
                   onChange={e => onInput(k, 'reps', e.target.value)}
-                  style={{
-                    background: inp.reps ? '#200f1a' : '#1a1a2e',
-                    border: `1.5px solid ${inp.reps ? '#ef444488' : '#22223a'}`,
-                    borderRadius: 8, padding: '7px 6px',
-                    color: inp.reps ? '#fca5a5' : '#e8e8f0',
-                    fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
-                  }}
+                  style={inputStyle(inp.reps || '', isValidReps)}
                 />
               </div>
             )
           })
         }
 
-        const k = keyFn(ex.name, s)
+        const k   = keyFn(ex.name, s)
         const inp = inputs[k] || {}
         const prev = lastPerfs[`${ex.name}|S${s}`]
         return (
@@ -406,38 +404,21 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             <span style={{ fontSize: 11, fontWeight: 600, color: isBonus ? '#533483' : '#4a4a6a' }}>
               {isBonus ? '＋' : `S${s}`}
             </span>
-            <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
-              {prev?.poids || '—'}
-            </span>
-            <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>
-              {prev?.reps || '—'}
-            </span>
-            <input
-              type="number" placeholder="kg" value={inp.poids || ''}
+            <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.poids || '—'}</span>
+            <span style={{ textAlign: 'center', fontSize: 13, color: prev ? '#6b5fa0' : '#2a2a40', fontWeight: 500 }}>{prev?.reps || '—'}</span>
+            <input type="number" placeholder="kg" value={inp.poids || ''}
               onChange={e => onInput(k, 'poids', e.target.value)}
-              style={{
-                background: inp.poids ? '#200f1a' : '#1a1a2e',
-                border: `1.5px solid ${inp.poids ? '#ef444488' : isBonus ? '#2d1f4a' : '#22223a'}`,
-                borderRadius: 8, padding: '7px 6px',
-                color: inp.poids ? '#fca5a5' : '#e8e8f0',
-                fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
-              }}
+              style={inputStyle(inp.poids || '', isValidPoids)}
             />
-            <input
-              type="number" placeholder="reps" value={inp.reps || ''}
+            <input type="number" placeholder="reps" value={inp.reps || ''}
               onChange={e => onInput(k, 'reps', e.target.value)}
-              style={{
-                background: inp.reps ? '#200f1a' : '#1a1a2e',
-                border: `1.5px solid ${inp.reps ? '#ef444488' : isBonus ? '#2d1f4a' : '#22223a'}`,
-                borderRadius: 8, padding: '7px 6px',
-                color: inp.reps ? '#fca5a5' : '#e8e8f0',
-                fontSize: 14, fontWeight: 600, textAlign: 'center', width: '100%', outline: 'none',
-              }}
+              style={inputStyle(inp.reps || '', isValidReps)}
             />
           </div>
         )
       })}
 
+      {/* Séries bonus S-1 read-only */}
       {lastBonusArr.map(s => {
         const prev = lastPerfs[`${ex.name}|S${s}`]
         if (!prev || (!prev.poids && !prev.reps)) return null
@@ -450,25 +431,22 @@ function ExerciseBlock({ ex, inputs, lastPerfs, lastNote, lastBonusCount, note, 
             <span style={{ fontSize: 10, color: '#533483' }}>＋S-1</span>
             <span style={{ textAlign: 'center', fontSize: 12, color: '#533483' }}>{prev.poids || '—'}</span>
             <span style={{ textAlign: 'center', fontSize: 12, color: '#533483' }}>{prev.reps || '—'}</span>
-            <span style={{ textAlign: 'center', fontSize: 11, color: '#2a2a40', gridColumn: 'span 2', fontStyle: 'italic' }}>
-              bonus S-1
-            </span>
+            <span style={{ textAlign: 'center', fontSize: 11, color: '#2a2a40', gridColumn: 'span 2', fontStyle: 'italic' }}>bonus S-1</span>
           </div>
         )
       })}
 
+      {/* Footer */}
       <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a2e', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={onAddSet} style={{
             background: '#1a1a2e', border: '1px dashed #2d1f4a',
-            borderRadius: 8, padding: '6px 12px', color: '#a78bfa',
-            fontSize: 11, fontWeight: 600,
+            borderRadius: 8, padding: '6px 12px', color: '#a78bfa', fontSize: 11, fontWeight: 600,
           }}>＋ série</button>
           {extraSetsCount > 0 && (
             <button onClick={onRemoveSet} style={{
               background: '#1a1a2e', border: '1px dashed #3a1a1a',
-              borderRadius: 8, padding: '6px 12px', color: '#6b3a3a',
-              fontSize: 11, fontWeight: 600,
+              borderRadius: 8, padding: '6px 12px', color: '#6b3a3a', fontSize: 11, fontWeight: 600,
             }}>－ série</button>
           )}
         </div>

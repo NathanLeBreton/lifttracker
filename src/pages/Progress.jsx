@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid, BarChart, Bar,
+} from 'recharts'
 import { getExoHistory } from '../db/db'
 import { PROGRAMME } from '../data/programme'
 
-// All exercises flat list
 const ALL_EXOS = []
 PROGRAMME.forEach(day => {
   day.muscles.forEach(m => {
@@ -15,41 +17,90 @@ PROGRAMME.forEach(day => {
   })
 })
 
+const MODES = [
+  { id: 'poids', label: 'Charge max' },
+  { id: 'volume', label: 'Volume' },
+  { id: 'reps', label: 'Reps max' },
+]
+
 export default function Progress({ refreshKey }) {
   const [selected, setSelected] = useState(ALL_EXOS[0]?.name || '')
   const [chartData, setChartData] = useState([])
+  const [mode, setMode] = useState('poids')
   const [loading, setLoading] = useState(false)
-  const [maxPoids, setMaxPoids] = useState(0)
+  const [stats, setStats] = useState(null)
 
   useEffect(() => {
     if (!selected) return
     setLoading(true)
     getExoHistory(selected).then(rows => {
-      // Group by date, keep max poids per date
+      // Grouper par date
       const byDate = {}
       rows.forEach(r => {
-        if (!byDate[r.date] || r.poids > byDate[r.date].poids) {
-          byDate[r.date] = r
-        }
+        if (!byDate[r.date]) byDate[r.date] = []
+        byDate[r.date].push(r)
       })
-      const sorted = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
-      const formatted = sorted.map(r => ({
-        ...r,
-        label: new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-      }))
-      setChartData(formatted)
-      setMaxPoids(Math.max(...formatted.map(r => r.poids), 0))
+
+      const sorted = Object.entries(byDate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, sets]) => {
+          const maxPoids = Math.max(...sets.map(s => s.poids))
+          const maxReps  = Math.max(...sets.map(s => s.reps))
+          const volume   = sets.reduce((acc, s) => acc + (s.poids * s.reps), 0)
+          const bestSet  = sets.reduce((best, s) => (s.poids * s.reps > best.poids * best.reps ? s : best), sets[0])
+          return {
+            date,
+            label: new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+            poids: maxPoids,
+            reps: maxReps,
+            volume: Math.round(volume),
+            bestSet,
+          }
+        })
+
+      setChartData(sorted)
+
+      if (sorted.length > 0) {
+        const first = sorted[0]
+        const last  = sorted[sorted.length - 1]
+        const recent = sorted.slice(-3)
+        const trend = recent.length >= 2
+          ? recent[recent.length - 1].poids - recent[0].poids
+          : 0
+
+        setStats({
+          record:      Math.max(...sorted.map(r => r.poids)),
+          recordVol:   Math.max(...sorted.map(r => r.volume)),
+          progression: (last.poids - first.poids).toFixed(1),
+          sessions:    sorted.length,
+          trend,
+        })
+      } else {
+        setStats(null)
+      }
+
       setLoading(false)
     })
   }, [selected, refreshKey])
+
+  const trendIcon  = !stats ? '' : stats.trend > 0 ? '↗' : stats.trend < 0 ? '↘' : '→'
+  const trendColor = !stats ? '' : stats.trend > 0 ? '#16a34a' : stats.trend < 0 ? '#ef4444' : '#6b6b8a'
+
+  const dataKey    = mode === 'volume' ? 'volume' : mode === 'reps' ? 'reps' : 'poids'
+  const lineColor  = mode === 'volume' ? '#0ea5e9' : mode === 'reps' ? '#f97316' : '#a78bfa'
+  const unit       = mode === 'volume' ? 'kg·reps' : mode === 'reps' ? 'reps' : 'kg'
+  const recordVal  = mode === 'volume' ? stats?.recordVol : mode === 'reps'
+    ? (chartData.length ? Math.max(...chartData.map(r => r.reps)) : 0)
+    : stats?.record
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null
     return (
       <div style={{ background: '#1a1a2e', border: '1px solid #2e2e50', borderRadius: 8, padding: '8px 12px' }}>
         <div style={{ color: '#6b6b8a', fontSize: 11, marginBottom: 4 }}>{label}</div>
-        <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 16 }}>{payload[0].value} kg</div>
-        {payload[1] && <div style={{ color: '#ef4444', fontSize: 13 }}>{payload[1].value} reps</div>}
+        <div style={{ color: lineColor, fontWeight: 700, fontSize: 16 }}>
+          {payload[0].value} <span style={{ fontSize: 12, color: '#6b6b8a' }}>{unit}</span>
+        </div>
       </div>
     )
   }
@@ -68,8 +119,8 @@ export default function Progress({ refreshKey }) {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 120px' }}>
 
-        {/* Exercise selector */}
-        <div style={{ marginBottom: 20 }}>
+        {/* Sélecteur exercice */}
+        <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 10, color: '#4a4a6a', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>
             Exercice
           </div>
@@ -93,7 +144,19 @@ export default function Progress({ refreshKey }) {
           </select>
         </div>
 
-        {/* Chart */}
+        {/* Onglets mode */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+          {MODES.map(m => (
+            <button key={m.id} onClick={() => setMode(m.id)} style={{
+              flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none',
+              background: mode === m.id ? lineColor : '#1a1a2e',
+              color: mode === m.id ? '#fff' : '#4a4a6a',
+              fontSize: 11, fontWeight: 600, transition: 'all 0.15s',
+            }}>{m.label}</button>
+          ))}
+        </div>
+
+        {/* Graphique */}
         <div style={{ background: '#12121e', border: '1px solid #1a1a2e', borderRadius: 14, padding: '20px 8px 12px', marginBottom: 16 }}>
           {loading && <div style={{ color: '#3a3a5a', textAlign: 'center', padding: 40 }}>Chargement...</div>}
           {!loading && chartData.length === 0 && (
@@ -103,36 +166,66 @@ export default function Progress({ refreshKey }) {
           )}
           {!loading && chartData.length > 0 && (
             <>
-              <div style={{ paddingLeft: 16, marginBottom: 16 }}>
-                <div style={{ fontSize: 10, color: '#4a4a6a', textTransform: 'uppercase', letterSpacing: 1 }}>Record</div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#a78bfa', letterSpacing: 1 }}>
-                  {maxPoids} <span style={{ fontSize: 18, color: '#6b6b8a' }}>kg</span>
+              {/* Record + tendance */}
+              <div style={{ paddingLeft: 16, marginBottom: 16, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingRight: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#4a4a6a', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    {mode === 'volume' ? 'Volume max' : mode === 'reps' ? 'Reps max' : 'Record'}
+                  </div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: lineColor, letterSpacing: 1 }}>
+                    {recordVal} <span style={{ fontSize: 16, color: '#6b6b8a' }}>{unit}</span>
+                  </div>
                 </div>
+                {stats && mode === 'poids' && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, color: '#4a4a6a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+                      Tendance récente
+                    </div>
+                    <div style={{ fontSize: 28, color: trendColor }}>{trendIcon}</div>
+                  </div>
+                )}
               </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
-                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} width={32} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone" dataKey="poids" stroke="#a78bfa" strokeWidth={2.5}
-                    dot={{ fill: '#a78bfa', strokeWidth: 0, r: 4 }}
-                    activeDot={{ r: 6, fill: '#7c3aed' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+
+              {mode === 'volume' ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} width={40} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="volume" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#4a4a6a' }} axisLine={false} tickLine={false} width={32} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone" dataKey={dataKey} stroke={lineColor} strokeWidth={2.5}
+                      dot={{ fill: lineColor, strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </>
           )}
         </div>
 
-        {/* Stats */}
-        {chartData.length > 1 && (
+        {/* Stats cards */}
+        {stats && chartData.length > 1 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {[
-              { label: 'Séances', value: chartData.length },
+              { label: 'Séances', value: stats.sessions },
               { label: 'Départ', value: `${chartData[0]?.poids} kg` },
-              { label: 'Progression', value: `+${(chartData[chartData.length-1]?.poids - chartData[0]?.poids).toFixed(1)} kg` },
+              {
+                label: 'Progression',
+                value: `${stats.progression >= 0 ? '+' : ''}${stats.progression} kg`,
+                color: stats.progression > 0 ? '#16a34a' : stats.progression < 0 ? '#ef4444' : '#6b6b8a',
+              },
             ].map(stat => (
               <div key={stat.label} style={{
                 background: '#12121e', border: '1px solid #1a1a2e',
@@ -141,7 +234,7 @@ export default function Progress({ refreshKey }) {
                 <div style={{ fontSize: 10, color: '#4a4a6a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
                   {stat.label}
                 </div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: '#e8e8f0', letterSpacing: 1 }}>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: stat.color || '#e8e8f0', letterSpacing: 1 }}>
                   {stat.value}
                 </div>
               </div>

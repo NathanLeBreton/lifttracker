@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { saveSession } from './db/db'
 import Home from './pages/Home'
 import Session from './pages/Session'
+import LastSession from './pages/LastSession'
 import History from './pages/History'
 import Progress from './pages/Progress'
 import Cardio from './pages/Cardio'
@@ -11,7 +12,6 @@ import Toast from './components/Toast'
 export default function App() {
   const [view, setView] = useState('home')
   const [activeDay, setActiveDay] = useState(null)
-  const [doneDays, setDoneDays] = useState({})
   const [toast, setToast] = useState(null)
   const [historyKey, setHistoryKey] = useState(0)
   const [cardioKey, setCardioKey] = useState(0)
@@ -23,10 +23,14 @@ export default function App() {
     setView('session')
   }
 
+  const viewLastSession = (day) => {
+    setActiveDay(day)
+    setView('lastSession')
+  }
+
   const handleValidate = async (dayId, rows, notes) => {
     try {
       await saveSession(dayId, rows, notes)
-      setDoneDays(prev => ({ ...prev, [dayId]: true }))
       setHistoryKey(k => k + 1)
       showToast(`✅ ${rows.length} séries archivées !`)
       setTimeout(() => setView('home'), 600)
@@ -52,15 +56,22 @@ export default function App() {
       height: '100dvh', display: 'flex', flexDirection: 'column',
       background: '#0d0d14', position: 'relative', overflow: 'hidden',
     }}>
-      {view === 'home' && <Home onOpenDay={openDay} doneDays={doneDays} />}
+      {view === 'home' && (
+        <Home onOpenDay={openDay} onViewLastSession={viewLastSession} />
+      )}
       {view === 'session' && activeDay && (
         <Session day={activeDay} onBack={() => setView('home')} onValidate={handleValidate} />
+      )}
+      {view === 'lastSession' && activeDay && (
+        <LastSession day={activeDay} onBack={() => setView('home')} />
       )}
       {view === 'cardio'   && <Cardio refreshKey={cardioKey} onSaved={handleCardioSaved} />}
       {view === 'history'  && <History refreshKey={historyKey} />}
       {view === 'progress' && <Progress refreshKey={historyKey} />}
 
-      {view !== 'session' && <BottomNav current={view} onNav={navTo} />}
+      {view !== 'session' && view !== 'lastSession' && (
+        <BottomNav current={view} onNav={navTo} />
+      )}
 
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>

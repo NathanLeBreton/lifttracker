@@ -6,6 +6,7 @@ import LastSession from './pages/LastSession'
 import History from './pages/History'
 import Progress from './pages/Progress'
 import Cardio from './pages/Cardio'
+import AvantBras from './pages/AvantBras'
 import BottomNav from './components/BottomNav'
 import Toast from './components/Toast'
 
@@ -15,6 +16,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [historyKey, setHistoryKey] = useState(0)
   const [cardioKey, setCardioKey] = useState(0)
+  const [avantBrasKey, setAvantBrasKey] = useState(0)
 
   const showToast = (msg) => setToast(msg)
 
@@ -45,6 +47,11 @@ export default function App() {
     showToast('🏃 Séance cardio enregistrée !')
   }
 
+  const handleAvantBrasSaved = () => {
+    setAvantBrasKey(k => k + 1)
+    showToast('💪 Séance avant-bras enregistrée !')
+  }
+
   const navTo = (v) => {
     if (v === 'home') setActiveDay(null)
     setView(v)
@@ -65,9 +72,10 @@ export default function App() {
       {view === 'lastSession' && activeDay && (
         <LastSession day={activeDay} onBack={() => setView('home')} />
       )}
-      {view === 'cardio'   && <Cardio refreshKey={cardioKey} onSaved={handleCardioSaved} />}
-      {view === 'history'  && <History refreshKey={historyKey} />}
-      {view === 'progress' && <Progress refreshKey={historyKey} />}
+      {view === 'cardio'    && <Cardio refreshKey={cardioKey} onSaved={handleCardioSaved} />}
+      {view === 'avantBras' && <AvantBras refreshKey={avantBrasKey} onSaved={handleAvantBrasSaved} />}
+      {view === 'history'   && <History refreshKey={historyKey} />}
+      {view === 'progress'  && <Progress refreshKey={historyKey} />}
 
       {view !== 'session' && view !== 'lastSession' && (
         <BottomNav current={view} onNav={navTo} />

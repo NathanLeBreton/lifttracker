@@ -1,8 +1,9 @@
 const items = [
-  { id: 'home',     icon: '🏠', label: 'Séances'   },
-  { id: 'cardio',   icon: '🏃', label: 'Cardio'    },
-  { id: 'history',  icon: '📋', label: 'Historique' },
-  { id: 'progress', icon: '📈', label: 'Progrès'    },
+  { id: 'home',      icon: '🏠', label: 'Séances'    },
+  { id: 'cardio',    icon: '🏃', label: 'Cardio'     },
+  { id: 'avantBras', icon: '💪', label: 'Avant-bras' },
+  { id: 'history',   icon: '📋', label: 'Historique' },
+  { id: 'progress',  icon: '📈', label: 'Progrès'    },
 ]
 
 export default function BottomNav({ current, onNav }) {

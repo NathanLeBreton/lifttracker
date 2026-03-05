@@ -2,11 +2,12 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('LiftTracker')
 
-db.version(5).stores({
+db.version(6).stores({
   sets: '++id, dayId, exo, serie, date, sessionId, bonus',
   sessions: '++id, dayId, date, dureeMin',
   notes: '++id, sessionId, exo',
   cardio: '++id, date, type',
+  avantBras: '++id, date, jour',
 })
 
 export async function saveSession(dayId, rows, notes, dureeMin) {
@@ -163,4 +164,34 @@ export async function getWeekStreak() {
   ])
 
   return { sessions: muscuSessions.length, days: days.size }
+}
+
+// ─── AVANT-BRAS ──────────────────────────────────────────────────────────────
+
+export async function saveAvantBras(jour, series) {
+  const date = new Date().toISOString().slice(0, 10)
+  return await db.avantBras.add({ jour, date, series: JSON.stringify(series) })
+}
+
+export async function getAllAvantBras() {
+  const all = await db.avantBras.orderBy('date').reverse().toArray()
+  return all.map(s => ({ ...s, series: JSON.parse(s.series) }))
+}
+
+export async function deleteAvantBras(id) {
+  await db.avantBras.delete(id)
+}
+
+export async function getAvantBrasHistory(exoName) {
+  const all = await db.avantBras.orderBy('date').toArray()
+  const rows = []
+  all.forEach(session => {
+    const series = JSON.parse(session.series)
+    series.forEach(s => {
+      if (s.exo === exoName && s.poids && s.reps) {
+        rows.push({ date: session.date, poids: parseFloat(s.poids), reps: parseInt(s.reps) })
+      }
+    })
+  })
+  return rows
 }

@@ -60,11 +60,11 @@ export const PROGRAMME = [
     accent: '#3b82f6',
     muscles: [
       { name: 'DOS', color: '#3b82f6', exercises: [
-        { name: 'Rowing Unilatéral chest-supported', sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
-        { name: 'Pulldown unilatéral',               sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
-        { name: 'Rowing horizontal poulie basse',    sets: 2, reps: '8–12',  rir: '~2'  },
-        { name: 'Lat Pulldown poulie',               sets: 2, reps: '8–12',  rir: '1–2' },
         { name: 'Pull-over poulie',                  sets: 3, reps: '12–20', rir: '0–1' },
+        { name: 'Rowing horizontal poulie basse',    sets: 2, reps: '8–12',  rir: '~2'  },
+        { name: 'Pulldown unilatéral',               sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
+        { name: 'Rowing Unilatéral chest-supported', sets: 2, reps: '8–12',  rir: '1–2', unilateral: true },
+        { name: 'Lat Pulldown poulie',               sets: 2, reps: '8–12',  rir: '1–2' },
       ]},
       { name: 'PECS (rappel)', color: '#ef4444', exercises: [
         { name: 'Pec Deck',    sets: 2, reps: '12–20', rir: '0–1' },
@@ -79,10 +79,10 @@ export const PROGRAMME = [
     accent: '#a855f7',
     muscles: [
       { name: 'ÉPAULES', color: '#a855f7', exercises: [
-        { name: 'Shoulder Press machine',      sets: 2, reps: '8–12',  rir: '1–2' },
         { name: 'Élévation latérale haltères', sets: 2, reps: '12–20', rir: '0–1' },
-        { name: 'Reverse Fly',                 sets: 2, reps: '12–20', rir: '0–1' },
         { name: 'Élévation latérale machine',  sets: 3, reps: '12–20', rir: '0–1' },
+        { name: 'Shoulder Press machine',      sets: 2, reps: '8–12',  rir: '1–2' },
+        { name: 'Reverse Fly',                 sets: 2, reps: '12–20', rir: '0–1' },
         { name: 'Shrugs',                      sets: 2, reps: '8–12',  rir: '1–2' },
         { name: 'Élévation frontale',          sets: 2, reps: '10–15', rir: '0–1' },
       ]},
@@ -100,9 +100,9 @@ export const PROGRAMME = [
         { name: 'Curl marteau', sets: 3, reps: '10–15', rir: '0–1' },
       ]},
       { name: 'TRICEPS', color: '#f97316', exercises: [
+        { name: 'Overhead triceps poulie',   sets: 3, reps: '8–12',  rir: '1'   },
         { name: 'Pushdown poulie incliné',   sets: 3, reps: '10–15', rir: '0–1' },
         { name: 'Pushdown unilatéral',       sets: 3, reps: '10–15', rir: '0–1', unilateral: true },
-        { name: 'Overhead triceps poulie',   sets: 3, reps: '8–12',  rir: '1'   },
       ]},
     ],
   },

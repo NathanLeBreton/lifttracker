@@ -79,7 +79,7 @@ export const PROGRAMME = [
     accent: '#a855f7',
     muscles: [
       { name: 'ÉPAULES', color: '#a855f7', exercises: [
-        { name: 'Élévation latérale haltères', sets: 2, reps: '12–20', rir: '0–1' },
+        { name: 'Élévation latérale poulie basse', sets: 2, reps: '12–20', rir: '0–1' },
         { name: 'Élévation latérale machine',  sets: 3, reps: '12–20', rir: '0–1' },
         { name: 'Shoulder Press machine',      sets: 2, reps: '8–12',  rir: '1–2' },
         { name: 'Reverse Fly',                 sets: 2, reps: '12–20', rir: '0–1' },
